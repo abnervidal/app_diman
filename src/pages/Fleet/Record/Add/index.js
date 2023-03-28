@@ -2,7 +2,7 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Collapse, { Button, Row, Col, Form } from 'react-bootstrap';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
@@ -10,71 +10,85 @@ import { toast } from 'react-toastify';
 import * as yup from 'yup'; // RulesValidation
 import { Formik } from 'formik'; // FormValidation
 import Select from 'react-select';
+import axios from '../../../../services/axios';
 import { primaryDarkColor } from '../../../../config/colors';
 import Loading from '../../../../components/Loading';
 
 const categoryOptions = [
-  { value: 'automovel', label: 'AUTOMÓVEL' },
-  { value: 'motocicleta', label: 'MOTOCICLETA' },
-  { value: 'onibus', label: 'ÔNIBUS' },
-  { value: 'motoneta', label: 'MOTONETA' },
-  { value: 'reboque', label: 'REBOQUE' },
-  { value: 'microonibus', label: 'MICROÔNIBUS' },
-  { value: 'quadriciclo', label: 'QUADRICICLO' },
-  { value: 'triciclo', label: 'TRICICLO' },
-  { value: 'bicicleta', label: 'BICICLETA' },
-  { value: 'caminhonete', label: 'CAMINHONETE' },
-  { value: 'trator', label: 'TRATOR' },
-  { value: 'caminhao', label: 'CAMINHÃO' },
-  { value: 'trator', label: 'TRATOR' },
+  { value: '1', label: 'AUTOMÓVEL' },
+  { value: '2', label: 'MOTOCICLETA' },
+  { value: '3', label: 'ÔNIBUS' },
+  { value: '4', label: 'MOTONETA' },
+  { value: '5', label: 'REBOQUE' },
+  { value: '6', label: 'MICROÔNIBUS' },
+  { value: '7', label: 'QUADRICICLO' },
 ];
 
-const fuelOptions = [
-  { value: 'gasolina', label: 'GASOLINA' },
-  { value: 'etanol', label: 'ETANOL' },
-  { value: 'gnv', label: 'GAS NATURAL VEICULAR (GNV)' },
-  { value: 'flex', label: 'FLEX-FUEL' },
-  { value: 'diesel', label: 'DIESEL' },
-];
+// const fuelOptions = [
+//   { value: '1', label: 'GASOLINA' },
+//   { value: '2', label: 'ETANOL' },
+//   { value: '3', label: 'GAS NATURAL VEICULAR (GNV)' },
+//   { value: '4', label: 'FLEX-FUEL' },
+//   { value: '5', label: 'DIESEL' },
+// ];
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
+  const [fuelOptions, setFuelOptions] = useState([]);
   // const [contacttypes, setContacttypes] = useState([]);
   const template = {
     brand: '',
     model: '',
+    alias: '',
     color: '',
     plate: '',
-    renavam: '',
+    renavan: '',
     year: '',
-    category: '',
-    chassi: '',
-    fuel: '',
     obs: '',
-    bodywork: '',
-    charge: '',
+    CartypeId: '',
+    CarFueltypeId: '',
   };
   const [initialValues, setInitialValues] = useState(template);
   const [optionsExtra, setoptionsExtra] = useState(false);
 
   const schema = yup.object().shape({
-    brand: yup.string().required('Requerido'),
-    model: yup.string().required('Requerido'),
-    color: yup.string().required('Requerido'),
-    plate: yup.string().required('Requerido'),
-    renavam: yup.number().required('Requerido'),
-    year: yup.number().required('Requerido'),
-    category: yup.object().required('Requerido'),
-    chassi: yup.string().required('Requerido'),
-    fuel: yup.object().required('Requerido'),
+    // brand: yup.string().required('Requerido'),
+    // model: yup.string().required('Requerido'),
+    // color: yup.string().required('Requerido'),
+    // plate: yup.string().required('Requerido'),
+    // renavan: yup.number().required('Requerido'),
+    // year: yup.number().required('Requerido'),
+    // category: yup.object().required('Requerido'),
+    // chassi: yup.string().required('Requerido'),
+    // fuel: yup.object().required('Requerido'),
     // obs: yup.string().required('Requerido'),
   });
+  useEffect(() => {
+    async function getData() {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/cars/types');
+        setFuelOptions(response.data);
+        setIsLoading(false);
+      } catch (err) {
+        // eslint-disable-next-line no-unused-expressions
+        err.response?.data?.errors
+          ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+          : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+        setIsLoading(false);
+      }
+    }
+
+    getData();
+  }, []);
 
   const handleStore = async (values, resetForm) => {
     try {
       setIsLoading(true);
-      resetForm();
       console.log(values);
+
+      await axios.post(`/cars/`, values);
+
       toast.success('Veículo Cadastrado Com Sucesso!');
       setIsLoading(false);
     } catch (err) {
@@ -125,7 +139,8 @@ export default function Index() {
                     <Row>
                       <Form.Group
                         as={Col}
-                        xs={4}
+                        xs={12}
+                        md={3}
                         controlId="brand"
                         className="pb-3"
                       >
@@ -162,7 +177,8 @@ export default function Index() {
 
                       <Form.Group
                         as={Col}
-                        xs={4}
+                        xs={12}
+                        md={6}
                         controlId="model"
                         className="pb-3"
                       >
@@ -195,7 +211,8 @@ export default function Index() {
 
                       <Form.Group
                         as={Col}
-                        xs={4}
+                        xs={12}
+                        md={3}
                         controlId="color"
                         className="pb-3"
                       >
@@ -229,7 +246,7 @@ export default function Index() {
                     <Row>
                       <Form.Group
                         as={Col}
-                        xs={4}
+                        xs={6}
                         controlId="plate"
                         className="pb-3"
                       >
@@ -264,16 +281,16 @@ export default function Index() {
                         as={Col}
                         xs={12}
                         lg={4}
-                        controlId="renavam"
+                        controlId="renavan"
                         className="pb-3"
                       >
-                        <Form.Label>RENAVAM</Form.Label>
+                        <Form.Label>renavan</Form.Label>
                         <Form.Control
                           type="number"
                           as={IMaskInput}
                           mask={Number}
-                          value={values.renavam}
-                          isInvalid={touched.renavam && !!errors.renavam}
+                          value={values.renavan}
+                          isInvalid={touched.renavan && !!errors.renavan}
                           placeholder="001234567890"
                           onBlur={handleBlur}
                           onAccept={(value, mask) => {
@@ -285,7 +302,7 @@ export default function Index() {
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.renavam}
+                          {errors.renavan}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -322,28 +339,28 @@ export default function Index() {
                       <Form.Group
                         as={Col}
                         xs={4}
-                        controlId="category"
+                        controlId="CartypeId"
                         className="pb-3"
                       >
                         <Form.Label>CATEGORIA</Form.Label>
                         <Select
-                          inputId="category"
+                          inputId="CartypeId"
                           options={categoryOptions}
                           value={values.category}
                           onChange={(selected) => {
-                            setFieldValue('category', selected);
+                            setFieldValue('CartypeId', selected.value);
                           }}
                           placeholder="Selecione a unidade"
                           onBlur={handleBlur}
-                          isInvalid={touched.category && !!errors.category}
-                          isValid={touched.category && !errors.category}
+                          isInvalid={touched.CartypeId && !!errors.CartypeId}
+                          isValid={touched.CartypeId && !errors.CartypeId}
                         />
                         <Form.Control.Feedback
                           tooltip
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.category}
+                          {errors.CartypeId}
                         </Form.Control.Feedback>
                       </Form.Group>
 
@@ -351,32 +368,36 @@ export default function Index() {
                         as={Col}
                         xs={12}
                         lg={4}
-                        controlId="fuel"
+                        controlId="CarFueltypeId"
                         className="pb-3"
                       >
                         <Form.Label>COMBUSTÍVEL:</Form.Label>
                         <Select
-                          inputId="fuel"
+                          inputId="CarFueltypeId"
                           options={fuelOptions}
-                          value={values.fuel}
+                          value={values.fuelOptions}
                           onChange={(selected) => {
-                            setFieldValue('fuel', selected);
+                            setFieldValue('CarFueltypeId', selected.value);
                           }}
                           placeholder="Selecione a unidade"
                           onBlur={handleBlur}
-                          isInvalid={touched.fuel && !!errors.fuel}
-                          isValid={touched.fuel && !errors.fuel}
+                          isInvalid={
+                            touched.CarFueltypeId && !!errors.CarFueltypeId
+                          }
+                          isValid={
+                            touched.CarFueltypeId && !errors.CarFueltypeId
+                          }
                         />
                         <Form.Control.Feedback
                           tooltip
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.fuel}
+                          {errors.CarFueltypeId}
                         </Form.Control.Feedback>
                       </Form.Group>
 
-                      <Form.Group
+                      {/* <Form.Group
                         as={Col}
                         xs={4}
                         controlId="chassi"
@@ -407,7 +428,7 @@ export default function Index() {
                         >
                           {errors.chassi}
                         </Form.Control.Feedback>
-                      </Form.Group>
+                      </Form.Group> */}
                     </Row>
 
                     <Row>
