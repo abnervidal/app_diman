@@ -3,50 +3,82 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
 import React, { useState } from 'react';
-import { Button, Row, Col, Form } from 'react-bootstrap';
+import Collapse, { Button, Row, Col, Form } from 'react-bootstrap';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'react-toastify';
 
 import * as yup from 'yup'; // RulesValidation
 import { Formik } from 'formik'; // FormValidation
+import Select from 'react-select';
 import { primaryDarkColor } from '../../../../config/colors';
 import Loading from '../../../../components/Loading';
+
+const categoryOptions = [
+  { value: 'automovel', label: 'AUTOMÓVEL' },
+  { value: 'motocicleta', label: 'MOTOCICLETA' },
+  { value: 'onibus', label: 'ÔNIBUS' },
+  { value: 'motoneta', label: 'MOTONETA' },
+  { value: 'reboque', label: 'REBOQUE' },
+  { value: 'microonibus', label: 'MICROÔNIBUS' },
+  { value: 'quadriciclo', label: 'QUADRICICLO' },
+  { value: 'triciclo', label: 'TRICICLO' },
+  { value: 'bicicleta', label: 'BICICLETA' },
+  { value: 'caminhonete', label: 'CAMINHONETE' },
+  { value: 'trator', label: 'TRATOR' },
+  { value: 'caminhao', label: 'CAMINHÃO' },
+  { value: 'trator', label: 'TRATOR' },
+];
+
+const fuelOptions = [
+  { value: 'gasolina', label: 'GASOLINA' },
+  { value: 'etanol', label: 'ETANOL' },
+  { value: 'gnv', label: 'GAS NATURAL VEICULAR (GNV)' },
+  { value: 'flex', label: 'FLEX-FUEL' },
+  { value: 'diesel', label: 'DIESEL' },
+];
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   // const [contacttypes, setContacttypes] = useState([]);
   const template = {
-    name: '',
-    email: '',
-    phone: '',
-    birthdate: '',
-    rg: '',
-    cpf: '',
-    filenamePhoto: '',
+    brand: '',
+    model: '',
+    color: '',
+    plate: '',
+    renavam: '',
+    year: '',
+    category: '',
+    chassi: '',
+    fuel: '',
+    obs: '',
+    bodywork: '',
+    charge: '',
   };
   const [initialValues, setInitialValues] = useState(template);
+  const [optionsExtra, setoptionsExtra] = useState(false);
 
   const schema = yup.object().shape({
-    name: yup.string().required('Requerido'),
-    // email: yup.string().email('Digite um email válido').required('Requerido'),
-    // rg: yup.string().required('Requerido'),
-    // phone: yup.string().required('Requerido'),
-    // cpf: yup
-    //   .string()
-    //   .test('is-valid', 'CPF inválido', (cpf) => validateCPF(cpf)),
-    // birthdate: yup
-    //   .date()
-    //   .max(new Date(), 'Não é possível incluir uma data futura')
-    //   .required('Campo obrigatório'),
+    brand: yup.string().required('Requerido'),
+    model: yup.string().required('Requerido'),
+    color: yup.string().required('Requerido'),
+    plate: yup.string().required('Requerido'),
+    renavam: yup.number().required('Requerido'),
+    year: yup.number().required('Requerido'),
+    category: yup.object().required('Requerido'),
+    chassi: yup.string().required('Requerido'),
+    fuel: yup.object().required('Requerido'),
+    // obs: yup.string().required('Requerido'),
   });
 
   const handleStore = async (values, resetForm) => {
     try {
+      setIsLoading(true);
       resetForm();
-      setIsLoading(false);
       console.log(values);
-      toast.success('Colaborador Cadastrado Com Sucesso!');
+      toast.success('Veículo Cadastrado Com Sucesso!');
+      setIsLoading(false);
     } catch (err) {
+      setIsLoading(true);
       // eslint-disable-next-line no-unused-expressions
       err.response?.data?.errors
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
@@ -65,7 +97,7 @@ export default function Index() {
             className=" text-center"
             style={{ background: primaryDarkColor, color: 'white' }}
           >
-            <span className="fs-5">INFORMAÇÕES PESSOAIS</span>
+            <span className="fs-5">CADASTRO DE VEÍCULOS</span>
           </Col>
         </Row>
         <Row className="pt-2">
@@ -93,25 +125,29 @@ export default function Index() {
                     <Row>
                       <Form.Group
                         as={Col}
-                        xs={12}
-                        controlId="name"
+                        xs={4}
+                        controlId="brand"
                         className="pb-3"
                       >
-                        <Form.Label>NOME</Form.Label>
+                        <Form.Label>MARCA</Form.Label>
                         <Form.Control
                           type="text"
-                          value={values.name}
+                          value={values.brand}
                           onChange={(e) => {
                             handleChange(e);
                           }}
-                          isInvalid={touched.name && !!errors.name}
-                          isValid={touched.name && !errors.name}
-                          placeholder="Digite o nome completo"
+                          isInvalid={touched.brand && !!errors.brand}
+                          isValid={touched.brand && !errors.brand}
+                          placeholder="Digite a marca do veículo"
                           onBlur={(e) => {
-                            setFieldValue('name', e.target.value.toUpperCase()); // UPPERCASE
+                            setFieldValue(
+                              'brand',
+                              e.target.value.toUpperCase()
+                            ); // UPPERCASE
                             handleBlur(e);
                           }}
                         />
+
                         {/* {touched.name && !!errors.name ? (
                           <Badge bg="danger">{errors.name}</Badge>
                         ) : null} */}
@@ -120,126 +156,99 @@ export default function Index() {
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.name}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-                    </Row>
-                    <Row>
-                      <Form.Group
-                        as={Col}
-                        xs={12}
-                        lg={4}
-                        controlId="cpf"
-                        className="pb-3"
-                      >
-                        <Form.Label>CPF</Form.Label>
-                        <Form.Control
-                          type="tel"
-                          as={IMaskInput}
-                          mask="000.000.000-00"
-                          value={values.cpf}
-                          isInvalid={touched.cpf && !!errors.cpf}
-                          // isValid={touched.cpf && !errors.cpf}
-                          placeholder="Digite o CPF"
-                          onBlur={handleBlur}
-                          onAccept={(value, mask) => {
-                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
-                          }}
-                        />
-                        <Form.Control.Feedback
-                          tooltip
-                          type="invalid"
-                          style={{ position: 'static' }}
-                        >
-                          {errors.cpf}
+                          {errors.brand}
                         </Form.Control.Feedback>
                       </Form.Group>
 
                       <Form.Group
                         as={Col}
-                        xs={12}
-                        lg={4}
-                        controlId="rg"
+                        xs={4}
+                        controlId="model"
                         className="pb-3"
                       >
-                        <Form.Label>RG</Form.Label>
+                        <Form.Label>MODELO</Form.Label>
                         <Form.Control
-                          type="tel"
-                          as={IMaskInput}
-                          mask={Number}
-                          value={values.rg}
-                          isInvalid={touched.rg && !!errors.rg}
-                          // isValid={touched.rg && !errors.rg}
-                          placeholder="Digite o RG"
-                          onBlur={handleBlur}
-                          onAccept={(value, mask) => {
-                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
-                          }}
-                        />
-                        <Form.Control.Feedback
-                          tooltip
-                          type="invalid"
-                          style={{ position: 'static' }}
-                        >
-                          {errors.rg}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-
-                      <Form.Group
-                        as={Col}
-                        xs={12}
-                        lg={4}
-                        controlId="birthdate"
-                        className="pb-3"
-                      >
-                        <Form.Label>NASCIMENTO</Form.Label>
-                        <Form.Control
-                          type="date"
-                          value={values.birthdate}
+                          type="text"
+                          value={values.model}
                           onChange={(e) => {
                             handleChange(e);
                           }}
-                          isInvalid={touched.birthdate && !!errors.birthdate}
-                          // isValid={touched.birthdate && !errors.birthdate}
-                          placeholder="Selecione a data"
-                          onBlur={handleBlur}
+                          isInvalid={touched.model && !!errors.model}
+                          isValid={touched.model && !errors.model}
+                          placeholder="Digite o modelo do veículo"
+                          onBlur={(e) => {
+                            setFieldValue(
+                              'model',
+                              e.target.value.toUpperCase()
+                            ); // UPPERCASE
+                            handleBlur(e);
+                          }}
                         />
                         <Form.Control.Feedback
                           tooltip
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.birthdate}
+                          {errors.model}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+
+                      <Form.Group
+                        as={Col}
+                        xs={4}
+                        controlId="color"
+                        className="pb-3"
+                      >
+                        <Form.Label>COR</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={values.color}
+                          onChange={(e) => {
+                            handleChange(e);
+                          }}
+                          isInvalid={touched.color && !!errors.color}
+                          isValid={touched.color && !errors.color}
+                          placeholder="Digite a cor do veículo"
+                          onBlur={(e) => {
+                            setFieldValue(
+                              'color',
+                              e.target.value.toUpperCase()
+                            ); // UPPERCASE
+                            handleBlur(e);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.color}
                         </Form.Control.Feedback>
                       </Form.Group>
                     </Row>
                     <Row>
                       <Form.Group
                         as={Col}
-                        xs={12}
-                        lg={8}
-                        controlId="email"
+                        xs={4}
+                        controlId="plate"
                         className="pb-3"
                       >
-                        <Form.Label>EMAIL</Form.Label>
+                        <Form.Label>PLACA</Form.Label>
                         <Form.Control
-                          as={IMaskInput}
-                          mask={/^\S*@?\S*$/}
                           type="text"
-                          value={values.email}
-                          // onChange={handleChange}
-                          isInvalid={touched.email && !!errors.email}
-                          // isValid={touched.email && !errors.email}
-                          placeholder="Digite o email"
+                          value={values.plate}
+                          onChange={(e) => {
+                            handleChange(e);
+                          }}
+                          isInvalid={touched.plate && !!errors.plate}
+                          isValid={touched.plate && !!errors.plate}
+                          placeholder="ABC1D23"
                           onBlur={(e) => {
                             setFieldValue(
-                              'email',
-                              e.target.value.toLowerCase()
-                            ); // lowercase
+                              'plate',
+                              e.target.value.toUpperCase()
+                            );
                             handleBlur(e);
-                          }}
-                          onAccept={(value, mask) => {
-                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
                           }}
                         />
                         <Form.Control.Feedback
@@ -247,33 +256,26 @@ export default function Index() {
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.email}
+                          {errors.plate}
                         </Form.Control.Feedback>
                       </Form.Group>
+
                       <Form.Group
                         as={Col}
                         xs={12}
                         lg={4}
-                        controlId="phone"
+                        controlId="renavam"
                         className="pb-3"
                       >
-                        <Form.Label>TELEFONE</Form.Label>
+                        <Form.Label>RENAVAM</Form.Label>
                         <Form.Control
+                          type="number"
                           as={IMaskInput}
-                          mask="(00) 0.0000-0000"
-                          type="tel"
-                          value={values.phone}
-                          // onChange={handleChange}
-                          isInvalid={touched.phone && !!errors.phone}
-                          // isValid={touched.phone && !errors.phone}
-                          placeholder="Digite o telefone"
-                          onBlur={(e) => {
-                            setFieldValue(
-                              'phone',
-                              e.target.value.toLowerCase()
-                            ); // lowercase
-                            handleBlur(e);
-                          }}
+                          mask={Number}
+                          value={values.renavam}
+                          isInvalid={touched.renavam && !!errors.renavam}
+                          placeholder="001234567890"
+                          onBlur={handleBlur}
                           onAccept={(value, mask) => {
                             setFieldValue(mask.el.input.id, mask.unmaskedValue);
                           }}
@@ -283,9 +285,251 @@ export default function Index() {
                           type="invalid"
                           style={{ position: 'static' }}
                         >
-                          {errors.phone}
+                          {errors.renavam}
                         </Form.Control.Feedback>
                       </Form.Group>
+
+                      <Form.Group
+                        as={Col}
+                        xs={12}
+                        lg={4}
+                        controlId="year"
+                        className="pb-3"
+                      >
+                        <Form.Label>ANO</Form.Label>
+                        <Form.Control
+                          type="number"
+                          as={IMaskInput}
+                          mask={Number}
+                          value={values.year}
+                          isInvalid={touched.year && !!errors.year}
+                          placeholder="Digite o ano"
+                          onBlur={handleBlur}
+                          onAccept={(value, mask) => {
+                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.year}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Row>
+                    <Row>
+                      <Form.Group
+                        as={Col}
+                        xs={4}
+                        controlId="category"
+                        className="pb-3"
+                      >
+                        <Form.Label>CATEGORIA</Form.Label>
+                        <Select
+                          inputId="category"
+                          options={categoryOptions}
+                          value={values.category}
+                          onChange={(selected) => {
+                            setFieldValue('category', selected);
+                          }}
+                          placeholder="Selecione a unidade"
+                          onBlur={handleBlur}
+                          isInvalid={touched.category && !!errors.category}
+                          isValid={touched.category && !errors.category}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.category}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+
+                      <Form.Group
+                        as={Col}
+                        xs={12}
+                        lg={4}
+                        controlId="fuel"
+                        className="pb-3"
+                      >
+                        <Form.Label>COMBUSTÍVEL:</Form.Label>
+                        <Select
+                          inputId="fuel"
+                          options={fuelOptions}
+                          value={values.fuel}
+                          onChange={(selected) => {
+                            setFieldValue('fuel', selected);
+                          }}
+                          placeholder="Selecione a unidade"
+                          onBlur={handleBlur}
+                          isInvalid={touched.fuel && !!errors.fuel}
+                          isValid={touched.fuel && !errors.fuel}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.fuel}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+
+                      <Form.Group
+                        as={Col}
+                        xs={4}
+                        controlId="chassi"
+                        className="pb-3"
+                      >
+                        <Form.Label>CHASSI</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={values.chassi}
+                          onChange={(e) => {
+                            handleChange(e);
+                          }}
+                          isInvalid={touched.chassi && !!errors.chassi}
+                          isValid={touched.chassi && !!errors.chassi}
+                          placeholder="9BWHE21JX24060831"
+                          onBlur={(e) => {
+                            setFieldValue(
+                              'chassi',
+                              e.target.value.toUpperCase()
+                            );
+                            handleBlur(e);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.chassi}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Row>
+
+                    <Row>
+                      <Form.Group xs={8} className="pb-3" controlId="obs">
+                        <Form.Label>OBSERVAÇÕES:</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={3}
+                          type="text"
+                          value={values.obs}
+                          onChange={handleChange}
+                          isInvalid={touched.obs && !!errors.obs}
+                          // isValid={touched.obs && !errors.obs}
+                          placeholder="Observaçoes diversas"
+                          onBlur={(e) => {
+                            setFieldValue('obs', e.target.value.toUpperCase()); // UPPERCASE
+                            handleBlur(e);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.obs}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                      {!optionsExtra ? (
+                        <Col xs="auto" className="ps-1 pt-4">
+                          <Button
+                            type="submit"
+                            variant="success"
+                            onClick={() => setoptionsExtra(!optionsExtra)}
+                            aria-controls="collapse-form"
+                            aria-expanded={optionsExtra}
+                            className="mt-2"
+                          >
+                            Mais Detalhes
+                          </Button>
+                        </Col>
+                      ) : null}
+                      {optionsExtra ? (
+                        <>
+                          <Form.Group
+                            as={Col}
+                            xs={6}
+                            controlId="bodywork"
+                            className="pb-3"
+                          >
+                            <Form.Label>CARROCERIA</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={values.bodywork}
+                              onChange={(e) => {
+                                handleChange(e);
+                              }}
+                              isInvalid={touched.bodywork && !!errors.bodywork}
+                              isValid={touched.bodywork && !!errors.bodywork}
+                              placeholder="Carroceria do veículo"
+                              onBlur={(e) => {
+                                setFieldValue(
+                                  'bodywork',
+                                  e.target.value.toUpperCase()
+                                );
+                                handleBlur(e);
+                              }}
+                            />
+                            <Form.Control.Feedback
+                              tooltip
+                              type="invalid"
+                              style={{ position: 'static' }}
+                            >
+                              {errors.bodywork}
+                            </Form.Control.Feedback>
+                          </Form.Group>
+                          <Form.Group
+                            as={Col}
+                            xs={6}
+                            controlId="charge"
+                            className="pb-3"
+                          >
+                            <Form.Label>CAPACIDADE DE CARGA</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={values.charge}
+                              onChange={(e) => {
+                                handleChange(e);
+                              }}
+                              isInvalid={touched.charge && !!errors.charge}
+                              isValid={touched.charge && !!errors.charge}
+                              placeholder="Carga do veículo"
+                              onBlur={(e) => {
+                                setFieldValue(
+                                  'charge',
+                                  e.target.value.toUpperCase()
+                                );
+                                handleBlur(e);
+                              }}
+                            />
+                            <Form.Control.Feedback
+                              tooltip
+                              type="invalid"
+                              style={{ position: 'static' }}
+                            >
+                              {errors.charge}
+                            </Form.Control.Feedback>
+                          </Form.Group>
+
+                          <Col xs="auto" className="ps-1 pt-4">
+                            <Button
+                              type="submit"
+                              variant="success"
+                              onClick={() => setoptionsExtra(!optionsExtra)}
+                              aria-controls="collapse-form"
+                              aria-expanded={optionsExtra}
+                              className="mt-2"
+                            >
+                              Menos Detalhes
+                            </Button>
+                          </Col>
+                        </>
+                      ) : null}
                     </Row>
                   </Col>
                 </Row>
