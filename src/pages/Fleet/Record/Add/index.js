@@ -14,27 +14,10 @@ import axios from '../../../../services/axios';
 import { primaryDarkColor } from '../../../../config/colors';
 import Loading from '../../../../components/Loading';
 
-const categoryOptions = [
-  { value: '1', label: 'AUTOMÓVEL' },
-  { value: '2', label: 'MOTOCICLETA' },
-  { value: '3', label: 'ÔNIBUS' },
-  { value: '4', label: 'MOTONETA' },
-  { value: '5', label: 'REBOQUE' },
-  { value: '6', label: 'MICROÔNIBUS' },
-  { value: '7', label: 'QUADRICICLO' },
-];
-
-// const fuelOptions = [
-//   { value: '1', label: 'GASOLINA' },
-//   { value: '2', label: 'ETANOL' },
-//   { value: '3', label: 'GAS NATURAL VEICULAR (GNV)' },
-//   { value: '4', label: 'FLEX-FUEL' },
-//   { value: '5', label: 'DIESEL' },
-// ];
-
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [fuelOptions, setFuelOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
   // const [contacttypes, setContacttypes] = useState([]);
   const template = {
     brand: '',
@@ -67,8 +50,10 @@ export default function Index() {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/cars/types');
+        const response = await axios.get('/cars/fuel'); // erro na rota
+        const responseCategoryOptions = await axios.get('/cars/types'); // erro na rota
         setFuelOptions(response.data);
+        setCategoryOptions(responseCategoryOptions.data);
         setIsLoading(false);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
@@ -136,6 +121,73 @@ export default function Index() {
               <Form noValidate autoComplete="off" onSubmit={handleSubmit}>
                 <Row className="d-flex justify-content-center align-items-center pb-4">
                   <Col md={10} lg={8}>
+                    <Row>
+                      <Form.Group
+                        as={Col}
+                        xs={12}
+                        lg={6}
+                        controlId="CartypeId"
+                        className="pb-3"
+                      >
+                        <Form.Label>CATEGORIA</Form.Label>
+                        <Select
+                          inputId="CartypeId"
+                          options={categoryOptions.map((item) => ({
+                            value: item.id,
+                            label: item.type,
+                          }))}
+                          value={values.category}
+                          onChange={(selected) => {
+                            setFieldValue('CartypeId', selected.value);
+                          }}
+                          placeholder="Selecione a unidade"
+                          onBlur={handleBlur}
+                          isInvalid={touched.CartypeId && !!errors.CartypeId}
+                          isValid={touched.CartypeId && !errors.CartypeId}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.CartypeId}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+
+                      <Form.Group
+                        as={Col}
+                        xs={12}
+                        md={6}
+                        controlId="alias"
+                        className="pb-3"
+                      >
+                        <Form.Label>APELIDO</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={values.alias}
+                          onChange={(e) => {
+                            handleChange(e);
+                          }}
+                          isInvalid={touched.alias && !!errors.alias}
+                          isValid={touched.alias && !errors.alias}
+                          placeholder="Digite o apelido do veículo"
+                          onBlur={(e) => {
+                            setFieldValue(
+                              'alias',
+                              e.target.value.toUpperCase()
+                            ); // UPPERCASE
+                            handleBlur(e);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.alias}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Row>
                     <Row>
                       <Form.Group
                         as={Col}
@@ -246,7 +298,36 @@ export default function Index() {
                     <Row>
                       <Form.Group
                         as={Col}
+                        xs={12}
+                        lg={6}
+                        controlId="renavan"
+                        className="pb-3"
+                      >
+                        <Form.Label>RENAVAN</Form.Label>
+                        <Form.Control
+                          type="number"
+                          as={IMaskInput}
+                          mask={Number}
+                          value={values.renavan}
+                          isInvalid={touched.renavan && !!errors.renavan}
+                          placeholder="001234567890"
+                          onBlur={handleBlur}
+                          onAccept={(value, mask) => {
+                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
+                          }}
+                        />
+                        <Form.Control.Feedback
+                          tooltip
+                          type="invalid"
+                          style={{ position: 'static' }}
+                        >
+                          {errors.renavan}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                      <Form.Group
+                        as={Col}
                         xs={6}
+                        lg={3}
                         controlId="plate"
                         className="pb-3"
                       >
@@ -280,36 +361,7 @@ export default function Index() {
                       <Form.Group
                         as={Col}
                         xs={12}
-                        lg={4}
-                        controlId="renavan"
-                        className="pb-3"
-                      >
-                        <Form.Label>renavan</Form.Label>
-                        <Form.Control
-                          type="number"
-                          as={IMaskInput}
-                          mask={Number}
-                          value={values.renavan}
-                          isInvalid={touched.renavan && !!errors.renavan}
-                          placeholder="001234567890"
-                          onBlur={handleBlur}
-                          onAccept={(value, mask) => {
-                            setFieldValue(mask.el.input.id, mask.unmaskedValue);
-                          }}
-                        />
-                        <Form.Control.Feedback
-                          tooltip
-                          type="invalid"
-                          style={{ position: 'static' }}
-                        >
-                          {errors.renavan}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-
-                      <Form.Group
-                        as={Col}
-                        xs={12}
-                        lg={4}
+                        lg={3}
                         controlId="year"
                         className="pb-3"
                       >
@@ -338,44 +390,19 @@ export default function Index() {
                     <Row>
                       <Form.Group
                         as={Col}
-                        xs={4}
-                        controlId="CartypeId"
-                        className="pb-3"
-                      >
-                        <Form.Label>CATEGORIA</Form.Label>
-                        <Select
-                          inputId="CartypeId"
-                          options={categoryOptions}
-                          value={values.category}
-                          onChange={(selected) => {
-                            setFieldValue('CartypeId', selected.value);
-                          }}
-                          placeholder="Selecione a unidade"
-                          onBlur={handleBlur}
-                          isInvalid={touched.CartypeId && !!errors.CartypeId}
-                          isValid={touched.CartypeId && !errors.CartypeId}
-                        />
-                        <Form.Control.Feedback
-                          tooltip
-                          type="invalid"
-                          style={{ position: 'static' }}
-                        >
-                          {errors.CartypeId}
-                        </Form.Control.Feedback>
-                      </Form.Group>
-
-                      <Form.Group
-                        as={Col}
                         xs={12}
-                        lg={4}
+                        lg={6}
                         controlId="CarFueltypeId"
                         className="pb-3"
                       >
                         <Form.Label>COMBUSTÍVEL:</Form.Label>
                         <Select
                           inputId="CarFueltypeId"
-                          options={fuelOptions}
-                          value={values.fuelOptions}
+                          options={fuelOptions.map((item) => ({
+                            value: item.id,
+                            label: item.type,
+                          }))}
+                          value={values.CarFueltypeId}
                           onChange={(selected) => {
                             setFieldValue('CarFueltypeId', selected.value);
                           }}
@@ -397,9 +424,10 @@ export default function Index() {
                         </Form.Control.Feedback>
                       </Form.Group>
 
-                      {/* <Form.Group
+                      <Form.Group
                         as={Col}
-                        xs={4}
+                        xs={12}
+                        lg={4}
                         controlId="chassi"
                         className="pb-3"
                       >
@@ -428,7 +456,7 @@ export default function Index() {
                         >
                           {errors.chassi}
                         </Form.Control.Feedback>
-                      </Form.Group> */}
+                      </Form.Group>
                     </Row>
 
                     <Row>
