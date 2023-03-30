@@ -35,15 +35,15 @@ export default function Index() {
   const [optionsExtra, setoptionsExtra] = useState(false);
 
   const schema = yup.object().shape({
-    // brand: yup.string().required('Requerido'),
-    // model: yup.string().required('Requerido'),
-    // color: yup.string().required('Requerido'),
-    // plate: yup.string().required('Requerido'),
-    // renavan: yup.number().required('Requerido'),
-    // year: yup.number().required('Requerido'),
-    // category: yup.object().required('Requerido'),
-    // chassi: yup.string().required('Requerido'),
-    // fuel: yup.object().required('Requerido'),
+    brand: yup.string().required('Requerido'),
+    model: yup.string().required('Requerido'),
+    alias: yup.string().required('Requerido'),
+    color: yup.string().required('Requerido'),
+    plate: yup.string().required('Requerido'),
+    renavan: yup.number().required('Requerido'),
+    year: yup.number().required('Requerido'),
+    chassi: yup.string().required('Requerido'),
+    fuel: yup.object().required('Requerido'),
     // obs: yup.string().required('Requerido'),
   });
   useEffect(() => {
@@ -402,7 +402,7 @@ export default function Index() {
                             value: item.id,
                             label: item.type,
                           }))}
-                          value={values.CarFueltypeId}
+                          value={values.fuel}
                           onChange={(selected) => {
                             setFieldValue('CarFueltypeId', selected.value);
                           }}
