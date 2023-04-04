@@ -19,15 +19,16 @@ import Agua from '../pages/Infra/Agua';
 import Esgoto from '../pages/Infra/Esgoto';
 import Drenagem from '../pages/Infra/Drenagem';
 import Pavimento from '../pages/Infra/Pavimento';
-import Edificio from '../pages/Infra/Edificio';
 import Page404 from '../pages/Page404';
 import Providers from '../pages/Providers';
+import Infra from '../pages/Infra';
 import Adm from '../pages/Adm';
 import Fleet from '../pages/Fleet';
 import Unauthorized from '../components/Unauthorized';
 
 import Test from '../pages/Materials/Reports/Output/components/EditModal';
 
+// TRANSFORMANDO O ARRAY userRoletypes PARA UM OBJETO ONDE ROLE É A CHAVE E O CÓDIGO É O VALOR
 const roles = usersRoletypes.reduce(
   (acc, cur) => ({ ...acc, [cur.role]: cur.id }),
   {}
@@ -50,8 +51,8 @@ export default function RoutesPages() {
       <Route exact path="/infra/esgoto/*" element={<Esgoto />} />
       <Route exact path="/infra/drenagem/*" element={<Drenagem />} />
       <Route exact path="/infra/pavimento/*" element={<Pavimento />} />
-      <Route exact path="/infra/edificio/*" element={<Edificio />} />
       <Route exact path="/providers/*" element={<Providers />} />
+      <Route exact path="/infra/*" element={<Infra />} />
       <Route exact path="/adm/*" element={<Adm />} />
       <Route exact path="/fleet/*" element={<Fleet />} />
 

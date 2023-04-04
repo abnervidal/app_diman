@@ -202,7 +202,7 @@ export default function Header() {
               <NavDropdown title="INFRA" id="collasible-nav-dropdown">
                 <NavDropdown.Item
                   href="#18"
-                  onClick={() => navigate('/infra/edificio')}
+                  onClick={() => navigate('/infra/edificio/list')}
                 >
                   Edifícios
                 </NavDropdown.Item>
@@ -281,7 +281,10 @@ export default function Header() {
               </NavDropdown>
 
               <NavDropdown title="ADM" id="collasible-nav-dropdown">
-                <NavDropdown.Item href="#29" onClick={() => navigate('/users')}>
+                <NavDropdown.Item
+                  href="#29"
+                  onClick={() => navigate('/adm/users/list')}
+                >
                   Usuários
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
