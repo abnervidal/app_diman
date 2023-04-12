@@ -18,7 +18,6 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [fuelOptions, setFuelOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
-  const [categoryOccurrences, setCategoryOccurrences] = useState([]);
   // const [contacttypes, setContacttypes] = useState([]);
   const template = {
     brand: '',
@@ -53,12 +52,8 @@ export default function Index() {
         setIsLoading(true);
         const response = await axios.get('/cars/fuel');
         const responseCategoryOptions = await axios.get('/cars/types');
-        const responseCategoryOccurrences = await axios.get(
-          '/cars/occurrences'
-        );
         setFuelOptions(response.data);
         setCategoryOptions(responseCategoryOptions.data);
-        setCategoryOccurrences(responseCategoryOccurrences.data);
         setIsLoading(false);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
@@ -586,84 +581,6 @@ export default function Index() {
                       ) : null}
                     </Row>
                   </Col>
-                </Row>
-
-                <Row className="d-flex justify-content-center align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                  <Col
-                    xs={12}
-                    className="text-center"
-                    style={{ background: primaryDarkColor, color: 'white' }}
-                  >
-                    <span className="fs-6">PRINCIPAIS MOTORISTAS</span>
-                  </Col>
-                  <FieldArray name="WorkerTaskItem" className="p-0">
-                    {(fieldArrayProps) => {
-                      const { remove, push } = fieldArrayProps;
-                      return (
-                        <Row className="d-flex justify-content-center align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                          <Col xs="12" md="auto" className="ps-0 pe-2">
-                            MOTORISTAS:
-                          </Col>
-                          <Col className="p-0">
-                            {' '}
-                            <Select
-                              inputId="searchServant"
-                              options={fuelOptions.map((item) => ({
-                                value: item.id,
-                                label: item.type,
-                              }))}
-                              value={null}
-                              placeholder="Selecione o servidor"
-                              escapeClearsValue
-                              onChange={(e) => {
-                                console.log(e.value);
-                                push(e.value);
-                              }}
-                            />
-                          </Col>
-                        </Row>
-                      );
-                    }}
-                  </FieldArray>
-                </Row>
-
-                <Row className="d-flex justify-content-center align-items-center  pt-1 pb-1 mb-2 bg-white border-bottom">
-                  <Col
-                    xs={12}
-                    className="text-center"
-                    style={{ background: primaryDarkColor, color: 'white' }}
-                  >
-                    <span className="fs-6">OCORRÊNCIAS</span>
-                  </Col>
-                  <FieldArray name="WorkerTaskItem" className="p-0">
-                    {(fieldArrayProps) => {
-                      const { remove, push } = fieldArrayProps;
-                      return (
-                        <Row className="d-flex justify-content-center align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                          <Col xs="12" md="auto" className="ps-0 pe-2">
-                            TIPO DE OCORRÊNCIA:
-                          </Col>
-                          <Col className="p-0">
-                            {' '}
-                            <Select
-                              inputId="searchServant"
-                              options={categoryOccurrences.map((item) => ({
-                                value: item.id,
-                                label: item.type,
-                              }))}
-                              value={null}
-                              placeholder="Selecione o servidor"
-                              escapeClearsValue
-                              onChange={(e) => {
-                                console.log(e.value);
-                                push(e.value);
-                              }}
-                            />
-                          </Col>
-                        </Row>
-                      );
-                    }}
-                  </FieldArray>
                 </Row>
 
                 <Row className="justify-content-center pt-2 pb-4">
