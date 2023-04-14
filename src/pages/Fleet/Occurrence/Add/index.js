@@ -19,9 +19,9 @@ import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
 
 const emptyValues = {
-  car: '',
-  driver: '',
-  occurrence: '',
+  car: [],
+  worker: [],
+  occurrence: [],
   data: '',
   obs: '',
 };
@@ -39,7 +39,8 @@ const validationSchema = Yup.object().shape({
 export default function RiskTaskForm({ initialValues = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [workers, setWorkers] = useState([]);
-  const [servants, setServants] = useState([]);
+  const [cars, setCars] = useState([]);
+  const [occurrencestypes, setOccurrencestypes] = useState([]);
 
   const isEditMode = !!initialValues;
 
@@ -47,11 +48,13 @@ export default function RiskTaskForm({ initialValues = null }) {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/workers/actives');
-        const response2 = await axios.get('/users');
+        const response = await axios.get('/workers/contracts/');
+        const response2 = await axios.get('/cars/');
+        const response3 = await axios.get('/caroccurrence/types');
 
         setWorkers(response.data);
-        setServants(response2.data);
+        setCars(response2.data);
+        setOccurrencestypes(response3.data);
 
         setIsLoading(false);
       } catch (err) {
@@ -123,7 +126,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                       md={6}
                       className="pb-3"
                     >
-                      <BootstrapForm.Label>Carro</BootstrapForm.Label>
+                      <BootstrapForm.Label>CARRO</BootstrapForm.Label>
 
                       <Field name="car">
                         {({ field }) => (
@@ -132,10 +135,14 @@ export default function RiskTaskForm({ initialValues = null }) {
                             className={
                               errors.car && touched.car ? 'is-invalid' : null
                             }
-                            options={riskOptions}
+                            options={cars.map((item) => ({
+                              value: item.id,
+                              label: [item.brand, item.model, item.plate],
+                            }))}
+                            // styles={}
                             value={
                               values.car
-                                ? riskOptions.find(
+                                ? cars.find(
                                     (option) => option.value === values.car
                                   )
                                 : null
@@ -154,39 +161,41 @@ export default function RiskTaskForm({ initialValues = null }) {
                     </BootstrapForm.Group>
 
                     <BootstrapForm.Group
-                      controlId="driver"
+                      controlId="worker"
                       as={Col}
                       xs={12}
                       md={6}
                       className="pb-3"
                     >
-                      <BootstrapForm.Label>Motorista</BootstrapForm.Label>
+                      <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
 
-                      <Field name="driver">
+                      <Field name="worker">
                         {({ field }) => (
                           <Select
                             {...field}
                             className={
-                              errors.driver && touched.driver
+                              errors.worker && touched.worker
                                 ? 'is-invalid'
                                 : null
                             }
-                            options={riskOptions}
-                            value={
-                              values.driver
-                                ? riskOptions.find(
-                                    (option) => option.value === values.driver
-                                  )
-                                : null
+                            options={
+                              // riskOptions
+                              workers
+                                .filter((item) => item.workerJobtypeId === 26)
+                                .map((item) => ({
+                                  label: item.workerId.nome,
+                                  value: item.workerId,
+                                }))
                             }
+                            value={null}
                             onChange={(selectedOption) =>
-                              setFieldValue('driver', selectedOption.value)
+                              setFieldValue('worker', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="driver"
+                        name="worker"
                         component="div"
                         className="invalid-feedback"
                       />
@@ -202,7 +211,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
-                        Tipo de Ocorrência
+                        TIPO DE OCORRÊNCIA
                       </BootstrapForm.Label>
 
                       <Field name="occurrence">
@@ -214,10 +223,13 @@ export default function RiskTaskForm({ initialValues = null }) {
                                 ? 'is-invalid'
                                 : null
                             }
-                            options={riskOptions}
+                            options={occurrencestypes.map((item) => ({
+                              value: item.id,
+                              label: item.type,
+                            }))}
                             value={
                               values.occurrence
-                                ? riskOptions.find(
+                                ? occurrencestypes.find(
                                     (option) =>
                                       option.value === values.occurrence
                                   )
@@ -244,7 +256,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
-                        Data Da Ocorrência
+                        DATA DA OCORRÊNCIA
                       </BootstrapForm.Label>
                       <Field
                         xs={6}
@@ -271,7 +283,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
-                        Especificações da Ocorrência
+                        ESPECIFICAÇÕES DA OCORRÊNCIA
                       </BootstrapForm.Label>
                       <BootstrapForm.Control
                         as="textarea"
