@@ -87,7 +87,7 @@ export default function Header() {
                 <NavDropdown.Divider />
                 <NavDropdown.Item
                   href="#3"
-                  onClick={() => navigate('/collaborator/safety/risk')}
+                  onClick={() => navigate('/collaborator/safety/risk/add')}
                 >
                   Segurança
                 </NavDropdown.Item>

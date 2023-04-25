@@ -8,7 +8,8 @@ import FacialRecognition from './Frequency/FacialRecognition';
 import FrequencyManual from './Frequency/Manual';
 
 import Safety from './Safety';
-import Risk from './Safety/Risk';
+import RiskAdd from './Safety/Risk/Add';
+import RiskList from './Safety/Risk/List';
 import EPI from './Safety/EPI';
 
 import Reports from './Reports';
@@ -35,7 +36,8 @@ export default function MaterialsRoutes() {
       </Route>
 
       <Route path="safety" element={<Safety />}>
-        <Route path="risk" element={<Risk />} />{' '}
+        <Route path="risk/add" element={<RiskAdd />} />{' '}
+        <Route path="risk/list" element={<RiskList />} />{' '}
         <Route path="epi" element={<EPI />} />{' '}
       </Route>
 

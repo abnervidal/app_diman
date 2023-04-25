@@ -17,9 +17,9 @@ import Select from 'react-select';
 import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-import axios from '../../../../services/axios';
-import Loading from '../../../../components/Loading';
-import { primaryDarkColor } from '../../../../config/colors';
+import axios from '../../../../../services/axios';
+import Loading from '../../../../../components/Loading';
+import { primaryDarkColor } from '../../../../../config/colors';
 
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>
@@ -36,6 +36,7 @@ const emptyValues = {
   place: '',
   propertySipacId: '',
   buildingSipacId: '',
+  buildingSipacSubRip: '',
   extraActivity: false,
   WorkerTasktypeId: '',
   WorkerTaskItems: [],
@@ -102,6 +103,25 @@ const cleanEmpty = (obj) => {
 };
 // LIMPANDO CHAVES NULL, UNDEFINED, EMPTY STRINGS
 
+const convertEmptyToNull = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj.map((value) => convertEmptyToNull(value));
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => {
+        if (Array.isArray(value) && value.length === 0) {
+          return [key, value];
+        }
+        return [key, convertEmptyToNull(value) ?? null];
+      })
+    );
+  }
+
+  return obj ?? null;
+};
+
 export default function RiskTaskForm({ initialValues = null }) {
   const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,20 +143,6 @@ export default function RiskTaskForm({ initialValues = null }) {
         const response2 = await axios.get('/users');
         const response3 = await axios.get('/workerstasks/risks/types');
         const response4 = await axios.get('/workerstasks/types');
-
-        // const workersJobs = response.data
-        //   .filter(
-        //     (value, index, arr) =>
-        //       arr.findIndex((item) => item.job === value.job) === index
-        //   )
-        //   .map((value) => value.job); // RETORNA OS DIFERENTES TRABALHOS
-
-        // workersJobs.forEach((value) => {
-        //   workersOp.push([
-        //     value,
-        //     response.data.filter((item) => item.job === value),
-        //   ]);
-        // });
 
         setServants(response2.data);
         setRisksTypes(response3.data);
@@ -202,6 +208,15 @@ export default function RiskTaskForm({ initialValues = null }) {
             response.data.filter((item) => item.municipio === value),
           ]);
         });
+
+        // removendo o array de CAMPUS UNIVERSITARIO DE NATAL para nao ficar em duplicidade
+        propertiesOp[0][1].shift();
+
+        // colocando um grupo de CAMPUS CENTRAL pra facilitar a seleçào
+        propertiesOp.unshift([
+          'CAMPUS CENTRAL',
+          [response.data[0], response.data[28]],
+        ]);
         setProperties(propertiesOp);
         setPropertiesData(response.data);
       } catch (err) {
@@ -220,8 +235,11 @@ export default function RiskTaskForm({ initialValues = null }) {
 
   const handleSubmit = async (values, resetForm) => {
     const formattedValues = {
-      ...cleanEmpty(values),
+      ...convertEmptyToNull(values),
     };
+
+    // tive que adicionar o valor na mão pq a função acima exclui do objeto chaves com valor falso, depois tem que averiguar
+    // if (!formattedValues.extraActivity) formattedValues.extraActivity = false;
 
     formattedValues.propertySipacId = values.propertySipacId.id;
 
@@ -370,10 +388,6 @@ export default function RiskTaskForm({ initialValues = null }) {
                                 selectedOption.value
                               )
                             }
-                            // onBlur={(e) => {
-                            //   console.log(e);
-                            //   setFieldTouched(e.target.id, true);
-                            // }}
                           />
                         )}
                       </Field>
@@ -406,6 +420,14 @@ export default function RiskTaskForm({ initialValues = null }) {
                           setFieldValue(
                             e.target.id,
                             e.target.value.toUpperCase()
+                          );
+                          setFieldValue(
+                            'start',
+                            new Date().toISOString().split('T')[0]
+                          );
+                          setFieldValue(
+                            'end',
+                            new Date().toISOString().split('T')[0]
                           );
                         }}
                       />
@@ -529,8 +551,10 @@ export default function RiskTaskForm({ initialValues = null }) {
                                   : false
                               )[0]
                               ?.buildingsSipac.map((building) => ({
-                                value: building.id,
-                                label: building.name,
+                                value: building,
+                                label: `${building.name} ${
+                                  building.zone ? `(ZONA ${building.zone})` : ''
+                                }`,
                               }))}
                             value={
                               values.buildingSipacId
@@ -540,12 +564,16 @@ export default function RiskTaskForm({ initialValues = null }) {
                                   )
                                 : null
                             }
-                            onChange={(selectedOption) =>
+                            onChange={(selectedOption) => {
                               setFieldValue(
                                 'buildingSipacId',
-                                selectedOption.value
-                              )
-                            }
+                                selectedOption.value.id
+                              );
+                              setFieldValue(
+                                'buildingSipacSubRip',
+                                selectedOption.value.subRip
+                              );
+                            }}
                           />
                         )}
                       </Field>
@@ -629,6 +657,11 @@ export default function RiskTaskForm({ initialValues = null }) {
                         name="start"
                         as={BootstrapForm.Control}
                         placeholder="Código"
+                        onBlur={(e) => {
+                          handleBlur(e);
+                          if (!errors.start && !values.end)
+                            setFieldValue('end', values.start);
+                        }}
                       />
                       <ErrorMessage
                         name="start"
@@ -672,11 +705,6 @@ export default function RiskTaskForm({ initialValues = null }) {
                       <BootstrapForm.Label>Atividade extra</BootstrapForm.Label>
                       <Field
                         xs={6}
-                        // className={
-                        //   errors.extraActivity && touched.extraActivity
-                        //     ? 'is-invalid'
-                        //     : null
-                        // }
                         type="switch"
                         name="extraActivity"
                         as={BootstrapForm.Check}
@@ -779,9 +807,9 @@ export default function RiskTaskForm({ initialValues = null }) {
                         return (
                           <>
                             <Row className="d-flex justify-content-center align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                              <Col xs="12" md="auto" className="ps-0 pe-2">
+                              {/* <Col xs="12" md="auto" className="ps-0 pe-2">
                                 PESQUISA DE SERVIDOR:
-                              </Col>
+                              </Col> */}
                               <Col className="p-0">
                                 {' '}
                                 <Select
@@ -794,30 +822,16 @@ export default function RiskTaskForm({ initialValues = null }) {
                                     .filter(
                                       (item) =>
                                         !values.WorkerTaskServants.find(
-                                          (element) => element.id === item.id
+                                          (element) =>
+                                            element.UserId === item.id
                                         )
                                     )
                                     .map((item) => ({
                                       label: item.name,
                                       value: item,
                                     }))}
-                                  // options={inventoryData.map((material) => ({
-                                  //   value: material,
-                                  //   label: `(${material.materialId}) ${material.name} - ${material.unit}`,
-                                  // }))}
                                   value={null}
-                                  // onChange={(selected, action) => {
-                                  //   handlePushItem(
-                                  //     push,
-                                  //     selected,
-                                  //     values.MaterialReserveItems
-                                  //   );
-                                  //   setFieldValue('searchMaterial', '');
-                                  // }}
                                   placeholder="Selecione o servidor"
-                                  // onBlur={() =>
-                                  //   setFieldValue('searchMaterial', '')
-                                  // }
                                   escapeClearsValue
                                   onChange={(e) => {
                                     console.log(e.value);
@@ -829,7 +843,6 @@ export default function RiskTaskForm({ initialValues = null }) {
                                           .UserPositiontype.position,
                                     });
                                   }}
-                                  // filterOption={filterOptions}
                                 />
                               </Col>
                             </Row>
@@ -968,32 +981,6 @@ export default function RiskTaskForm({ initialValues = null }) {
                                       </>
                                     )
                                   )}
-                                {/* {id ? (
-                              <Row className="mt-2">
-                                <Col xs="auto">
-                                  {' '}
-                                  <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    onClick={(e) => {
-                                      if (
-                                        values.WorkerTaskServants.find(
-                                          ({ end }) => end == null
-                                        )
-                                      ) {
-                                        toast.error(
-                                          'Para vincular um novo contrato ao colaborador, o contrato ativo precisa ser encerrado!'
-                                        );
-                                      } else {
-                                        push(e);
-                                      }
-                                    }}
-                                  >
-                                    <FaPlus /> Novo contrato
-                                  </Button>
-                                </Col>
-                              </Row>
-                            ) : null} */}
                               </Col>
                             </Row>
                           </>
@@ -1016,9 +1003,9 @@ export default function RiskTaskForm({ initialValues = null }) {
                         return (
                           <>
                             <Row className="d-flex justify-content-center align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                              <Col xs="12" md="auto" className="ps-0 pe-2">
+                              {/* <Col xs="12" md="auto" className="ps-0 pe-2">
                                 PESQUISA DE PROFISSIONAL:
-                              </Col>
+                              </Col> */}
                               <Col className="p-0">
                                 {' '}
                                 <Select
@@ -1030,29 +1017,16 @@ export default function RiskTaskForm({ initialValues = null }) {
                                       label: item.name,
                                     })),
                                   }))}
-                                  // options={inventoryData.map((material) => ({
-                                  //   value: material,
-                                  //   label: `(${material.materialId}) ${material.name} - ${material.unit}`,
-                                  // }))}
                                   value={null}
-                                  // onChange={(selected, action) => {
-                                  //   handlePushItem(
-                                  //     push,
-                                  //     selected,
-                                  //     values.MaterialReserveItems
-                                  //   );
-                                  //   setFieldValue('searchMaterial', '');
-                                  // }}
                                   placeholder="Selecione o profissional"
-                                  // onBlur={() =>
-                                  //   setFieldValue('searchMaterial', '')
-                                  // }
                                   escapeClearsValue
                                   onChange={(e) => {
-                                    console.log(e.value);
-                                    push(e.value);
+                                    push({
+                                      WorkerId: e.value.id,
+                                      name: e.value.name,
+                                      job: e.value.job,
+                                    });
                                   }}
-                                  // filterOption={filterOptions}
                                 />
                               </Col>
                             </Row>
@@ -1067,14 +1041,14 @@ export default function RiskTaskForm({ initialValues = null }) {
                                         </Col>
                                       </Row>
                                       <Row
-                                        key={item.id}
+                                        key={item.WorkerId}
                                         className="d-flex p-0 m-0 border-bottom"
                                       >
                                         <BootstrapForm.Group
                                           as={Col}
                                           xs={12}
                                           lg={1}
-                                          controlId={`WorkerTaskItems[${index}].id`}
+                                          controlId={`WorkerTaskItems[${index}].WorkerId`}
                                           className="border-0 m-0 p-0 d-none"
                                         >
                                           {index === 0 ? (
@@ -1086,7 +1060,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                                             type="text"
                                             plaintext
                                             readOnly
-                                            value={item.id}
+                                            value={item.WorkerId}
                                             size="sm"
                                             className="p-0 m-0 ps-2"
                                             tabindex="-1"
@@ -1187,32 +1161,6 @@ export default function RiskTaskForm({ initialValues = null }) {
                                       </Row>
                                     </>
                                   ))}
-                                {/* {id ? (
-                              <Row className="mt-2">
-                                <Col xs="auto">
-                                  {' '}
-                                  <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    onClick={(e) => {
-                                      if (
-                                        values.WorkerTaskItems.find(
-                                          ({ end }) => end == null
-                                        )
-                                      ) {
-                                        toast.error(
-                                          'Para vincular um novo contrato ao colaborador, o contrato ativo precisa ser encerrado!'
-                                        );
-                                      } else {
-                                        push(e);
-                                      }
-                                    }}
-                                  >
-                                    <FaPlus /> Novo contrato
-                                  </Button>
-                                </Col>
-                              </Row>
-                            ) : null} */}
                               </Col>
                             </Row>
                           </>
