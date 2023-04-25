@@ -73,11 +73,12 @@ export default function Index() {
       console.log(values);
 
       await axios.post(`/cars/`, values);
-
-      toast.success('Veículo Cadastrado Com Sucesso!');
       setIsLoading(false);
+      resetForm();
+      toast.success('Veículo Cadastrada Com Sucesso!');
     } catch (err) {
       setIsLoading(true);
+      console.log(values);
       // eslint-disable-next-line no-unused-expressions
       err.response?.data?.errors
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
@@ -109,7 +110,7 @@ export default function Index() {
             enableReinitialize
           >
             {({
-              handleSubmit,
+              submitForm,
               resetForm,
               handleChange,
               handleBlur,
@@ -118,7 +119,7 @@ export default function Index() {
               errors,
               setFieldValue,
             }) => (
-              <Form noValidate autoComplete="off" onSubmit={handleSubmit}>
+              <Form noValidate autoComplete="off">
                 <Row className="d-flex justify-content-center align-items-center pb-4">
                   <Col md={10} lg={8}>
                     <Row>
@@ -596,7 +597,11 @@ export default function Index() {
                       </Button>
                     </Col>
                     <Col xs="auto" className="text-center">
-                      <Button variant="success" type="submit">
+                      <Button
+                        variant="success"
+                        type="submit"
+                        onClick={submitForm}
+                      >
                         Cadastrar
                       </Button>
                     </Col>

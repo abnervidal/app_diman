@@ -19,24 +19,23 @@ import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
 
 const emptyValues = {
-  car: [],
-  worker: [],
-  occurrence: [],
+  carId: [],
+  workerId: [],
+  carOccurrencetypeId: [],
   data: '',
   obs: '',
 };
 
-const riskOptions = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-];
-
 const validationSchema = Yup.object().shape({
-  car: Yup.string().required('Required'),
+  carId: Yup.number().required('Necessário selecionar o veículo!'),
+  workerId: Yup.string().required('Necessário selecionar o motorista!'),
+  carOccurrencetypeId: Yup.number().required(
+    'Necessário selecionar o tipo de ocorrência!'
+  ),
+  data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
 });
 
-export default function RiskTaskForm({ initialValues = null }) {
+export default function CarOccurrence({ initialValues = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
@@ -48,7 +47,7 @@ export default function RiskTaskForm({ initialValues = null }) {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/workers/contracts/');
+        const response = await axios.get('/workers/actives/');
         const response2 = await axios.get('/cars/');
         const response3 = await axios.get('/caroccurrence/types');
 
@@ -57,6 +56,7 @@ export default function RiskTaskForm({ initialValues = null }) {
         setOccurrencestypes(response3.data);
 
         setIsLoading(false);
+        console.log(2);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
         err.response?.data?.errors
@@ -69,13 +69,23 @@ export default function RiskTaskForm({ initialValues = null }) {
     getData();
   }, []);
 
-  const handleSubmit = (values) => {
-    if (isEditMode) {
-      // In edit mode, merge the new values with the existing ones
-      const mergedValues = { ...initialValues, ...values };
-      console.log(mergedValues);
-    } else {
+  const handleSubmit = async (values, resetForm) => {
+    try {
+      setIsLoading(true);
       console.log(values);
+
+      await axios.post(`/caroccurrence/`, values);
+      setIsLoading(false);
+      resetForm();
+      toast.success('Ocorrência Cadastrada Com Sucesso!');
+    } catch (err) {
+      setIsLoading(true);
+      console.log(values);
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+      setIsLoading(false);
     }
   };
 
@@ -104,7 +114,9 @@ export default function RiskTaskForm({ initialValues = null }) {
             <Formik
               initialValues={initialValues || emptyValues}
               validationSchema={validationSchema}
-              onSubmit={handleSubmit}
+              onSubmit={(values, { resetForm }) => {
+                handleSubmit(values, resetForm);
+              }}
               onReset={handleResetAll}
               enableReinitialize
             >
@@ -120,7 +132,7 @@ export default function RiskTaskForm({ initialValues = null }) {
                 <Form as BootstrapForm onReset={handleReset}>
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
-                      controlId="car"
+                      controlId="carId"
                       as={Col}
                       xs={12}
                       md={6}
@@ -128,40 +140,42 @@ export default function RiskTaskForm({ initialValues = null }) {
                     >
                       <BootstrapForm.Label>CARRO</BootstrapForm.Label>
 
-                      <Field name="car">
+                      <Field name="carId">
                         {({ field }) => (
                           <Select
                             {...field}
                             className={
-                              errors.car && touched.car ? 'is-invalid' : null
+                              errors.carId && touched.carId
+                                ? 'is-invalid'
+                                : null
                             }
                             options={cars.map((item) => ({
                               value: item.id,
-                              label: [item.brand, item.model, item.plate],
+                              label: `${item.brand}   ${item.model}  -  ${item.plate}`,
                             }))}
                             // styles={}
                             value={
-                              values.car
+                              values.carId
                                 ? cars.find(
-                                    (option) => option.value === values.car
+                                    (option) => option.value === values.carId
                                   )
                                 : null
                             }
                             onChange={(selectedOption) =>
-                              setFieldValue('car', selectedOption.value)
+                              setFieldValue('carId', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="car"
+                        name="carId"
                         component="div"
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
 
                     <BootstrapForm.Group
-                      controlId="worker"
+                      controlId="workerId"
                       as={Col}
                       xs={12}
                       md={6}
@@ -169,33 +183,42 @@ export default function RiskTaskForm({ initialValues = null }) {
                     >
                       <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
 
-                      <Field name="worker">
+                      <Field name="workerId">
                         {({ field }) => (
                           <Select
                             {...field}
                             className={
-                              errors.worker && touched.worker
+                              errors.workerId && touched.workerId
                                 ? 'is-invalid'
                                 : null
                             }
-                            options={
-                              // riskOptions
-                              workers
-                                .filter((item) => item.workerJobtypeId === 26)
-                                .map((item) => ({
-                                  label: item.workerId.nome,
-                                  value: item.workerId,
-                                }))
-                            }
-                            value={null}
+                            options={workers
+                              .filter(
+                                (item) =>
+                                  item.WorkerContracts[0].WorkerJobtypeId === 26
+                              )
+                              .map((item) => ({
+                                label: item.name,
+                                value: item.id,
+                              }))}
+                            value={workers
+                              .filter(
+                                (item) =>
+                                  item.WorkerContracts[0].WorkerJobtypeId === 26
+                              )
+                              .map((item) => ({
+                                label: item.name,
+                                value: item.id,
+                              }))
+                              .find((item) => item.value === values.workerId)}
                             onChange={(selectedOption) =>
-                              setFieldValue('worker', selectedOption.value)
+                              setFieldValue('workerId', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="worker"
+                        name="workerId"
                         component="div"
                         className="invalid-feedback"
                       />
@@ -204,7 +227,7 @@ export default function RiskTaskForm({ initialValues = null }) {
 
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
-                      controlId="occurrence"
+                      controlId="carOccurrencetypeId"
                       as={Col}
                       xs={12}
                       md={8}
@@ -214,12 +237,13 @@ export default function RiskTaskForm({ initialValues = null }) {
                         TIPO DE OCORRÊNCIA
                       </BootstrapForm.Label>
 
-                      <Field name="occurrence">
+                      <Field name="carOccurrencetypeId">
                         {({ field }) => (
                           <Select
                             {...field}
                             className={
-                              errors.occurrence && touched.occurrence
+                              errors.carOccurrencetypeId &&
+                              touched.carOccurrencetypeId
                                 ? 'is-invalid'
                                 : null
                             }
@@ -228,21 +252,25 @@ export default function RiskTaskForm({ initialValues = null }) {
                               label: item.type,
                             }))}
                             value={
-                              values.occurrence
+                              values.carOccurrencetypeId
                                 ? occurrencestypes.find(
                                     (option) =>
-                                      option.value === values.occurrence
+                                      option.value ===
+                                      values.carOccurrencetypeId
                                   )
                                 : null
                             }
                             onChange={(selectedOption) =>
-                              setFieldValue('occurrence', selectedOption.value)
+                              setFieldValue(
+                                'carOccurrencetypeId',
+                                selectedOption.value
+                              )
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="occurrence"
+                        name="carOccurrencetypeId"
                         component="div"
                         className="invalid-feedback"
                       />
