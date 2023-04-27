@@ -39,6 +39,7 @@ const formatGroupLabel = (data) => (
 
 export default function Index() {
   const userId = useSelector((state) => state.auth.user.id);
+  const [data, setData] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [unidades, setUnidades] = useState([]);
@@ -72,7 +73,7 @@ export default function Index() {
       WorkerId: row.value.id,
       name: row.label,
       job: row.value.job,
-      WorkerManualfrequencytypeId: '',
+      WorkerManualfrequencytypeId: 2,
       hours: 9,
       obs: '',
     });
@@ -105,8 +106,6 @@ export default function Index() {
       try {
         setIsLoading(true);
         const response = await axios.get('/workers/actives');
-        const responseContract = await axios.get(`/workers/contracts`);
-        const responseUnidades = await axios.get('/unidades/');
 
         const workersJobs = response.data
           .filter(
@@ -122,9 +121,28 @@ export default function Index() {
           ]);
         });
 
+        const differentsContracts = Array.from(
+          new Set(
+            response.data.map((w) =>
+              JSON.stringify(w.WorkerContracts[0]?.Contract)
+            )
+          )
+        ).map((json) => JSON.parse(json));
+        const differentsUnidades = Array.from(
+          new Set(
+            response.data.map((w) =>
+              JSON.stringify(
+                w.WorkerContracts[0]?.Unidade
+                  ? w.WorkerContracts[0]?.Unidade
+                  : ''
+              )
+            )
+          )
+        ).map((json) => JSON.parse(json));
+
         setWorkers(workersOp);
-        setContracts(responseContract.data);
-        setUnidades(responseUnidades.data);
+        setContracts(differentsContracts.filter((item) => item));
+        setUnidades(differentsUnidades.filter((item) => item));
 
         setIsLoading(false);
       } catch (err) {
@@ -201,24 +219,26 @@ export default function Index() {
       setIsLoading(true);
 
       if (files.length > 0) {
-        await axios.post(`/workers/manualfrequency`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        // await axios.post(`/workers/manualfrequency`, formData, {
+        //   headers: {
+        //     'Content-Type': 'multipart/form-data',
+        //   },
+        // });
         // for (const pair of formData.entries()) {
         //   console.log(`${pair[0]} - ${pair[1]}`);
         // }
       } else {
         console.log(formattedValues);
-        await axios.post(`/workers/manualfrequency`, formattedValues);
+        // await axios.post(`/workers/manualfrequency`, formattedValues);
       }
 
       setIsLoading(false);
       setFiles([]);
       resetForm();
 
-      toast.success(`Registro de frequência realizado com sucesso`);
+      toast.success(
+        `Registro de frequência em desenolvimento, em breve estará disponível!`
+      );
     } catch (err) {
       // eslint-disable-next-line no-unused-expressions
       console.log(err);
@@ -285,12 +305,19 @@ export default function Index() {
                         value: contract.id,
                         label: `${contract.codigoSipac} - ${contract.objeto} `,
                       }))}
-                      value={values.ContractId}
+                      value={
+                        values.ContractId
+                          ? unidades.find(
+                              (option) => option.value === values.ContractId
+                            )
+                          : null
+                      }
                       onChange={(selected) => {
-                        setFieldValue('ContractId', selected);
+                        setFieldValue('ContractId', selected.value);
                       }}
-                      placeholder="Selecione o responsável"
+                      placeholder="Selecione o contrato"
                       onBlur={handleBlur}
+                      isDisabled={values.WorkerManualfrequencyItems.length}
                     />
                     {touched.ContractId && !!errors.ContractId ? (
                       <Badge bg="danger">{errors.ContractId}</Badge>
@@ -308,14 +335,27 @@ export default function Index() {
                       inputId="UnidadeId"
                       options={unidades.map((unidade) => ({
                         value: unidade.id,
-                        label: `${unidade.nomeUnidade} `,
+                        label: `${unidade.id} - ${unidade.nomeUnidade} `,
                       }))}
-                      value={values.UnidadeId}
+                      value={
+                        values.UnidadeId
+                          ? unidades.find(
+                              (option) => option.value === values.UnidadeId
+                            )
+                          : null
+                      }
                       onChange={(selected) => {
-                        setFieldValue('UnidadeId', selected);
+                        setFieldValue('UnidadeId', selected.value);
+                        setFieldValue(
+                          'date',
+                          new Date().toISOString().split('T')[0]
+                        );
                       }}
                       placeholder="Selecione a unidade"
-                      onBlur={handleBlur}
+                      onBlur={(e) => {
+                        handleBlur(e);
+                      }}
+                      isDisabled={values.WorkerManualfrequencyItems.length}
                     />
                     {touched.UnidadeId && !!errors.UnidadeId ? (
                       <Badge bg="danger">{errors.UnidadeId}</Badge>
@@ -386,22 +426,39 @@ export default function Index() {
                     return (
                       <>
                         <Row className="d-flex align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
-                          <Col sm="12" md="auto">
+                          {/* <Col sm="12" md="auto">
                             PESQUISA RÁPIDA:
-                          </Col>
+                          </Col> */}
                           <Col>
                             {' '}
                             <Select
                               inputId="searchWorker"
                               options={workers.map((value) => ({
                                 label: value[0],
-                                options: value[1].map((item) => ({
-                                  value: item,
-                                  label: item.name,
-                                })),
+                                options: value[1]
+                                  .filter(
+                                    // filtrando por contrato e unidade
+                                    (v) =>
+                                      v.WorkerContracts[0]?.unidadeId ===
+                                        values.UnidadeId &&
+                                      v.WorkerContracts[0]?.ContractId ===
+                                        values.ContractId
+                                  )
+                                  .filter(
+                                    // nao pode adicionar o mesmo item 2x
+                                    (item) =>
+                                      !values.WorkerManualfrequencyItems.find(
+                                        (element) =>
+                                          element.WorkerId === item.id
+                                      )
+                                  )
+                                  .map((item) => ({
+                                    value: item,
+                                    label: item.name,
+                                  })),
                               }))}
                               formatGroupLabel={formatGroupLabel}
-                              value={values.searchWorker}
+                              value={null}
                               onChange={(selected, action) => {
                                 console.log(selected);
                                 console.log(values.WorkerManualfrequencyItems);
@@ -470,19 +527,7 @@ export default function Index() {
                                       ) : null}
                                       <div className="px-2">{item.name}</div>
                                     </Form.Group>
-                                    <Form.Group
-                                      as={Col}
-                                      lg={2}
-                                      controlId={`WorkerManualfrequencyItems[${index}].obs`}
-                                      className="border-0 m-0 p-0"
-                                    >
-                                      {index === 0 ? (
-                                        <Form.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block">
-                                          OBS
-                                        </Form.Label>
-                                      ) : null}
-                                      <div className="px-2">{item.obs}</div>
-                                    </Form.Group>
+
                                     <Form.Group
                                       as={Col}
                                       lg={2}
@@ -496,10 +541,11 @@ export default function Index() {
                                       ) : null}
                                       <div className="px-2">{item.job}</div>
                                     </Form.Group>
+
                                     <Form.Group
                                       as={Col}
                                       xs={12}
-                                      lg={1}
+                                      md="auto"
                                       controlId={`WorkerManualfrequencyItems[${index}].WorkerManualfrequencytypeId`}
                                       className="border-0 m-0 p-0"
                                     >
@@ -508,46 +554,79 @@ export default function Index() {
                                           TIPO
                                         </Form.Label>
                                       ) : null}
-                                      <div className="px-2">
-                                        {item.WorkerManualfrequencytypeId}
-                                      </div>
+
+                                      <Form.Select
+                                        type="text"
+                                        value={item.WorkerManualfrequencytypeId}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        className="p-0 m-0 ps-2 pe-3 border-0"
+                                        style={{ width: '130px' }}
+                                      >
+                                        <option value="1">PRESENÇA</option>
+                                        <option value="2">FALTA</option>
+                                        <option value="3">ABONO</option>
+                                      </Form.Select>
                                     </Form.Group>
+
+                                    <Form.Group
+                                      as={Col}
+                                      xs={12}
+                                      sm={4}
+                                      md="auto"
+                                      controlId={`WorkerManualfrequencyItems[${index}].hours`}
+                                      className="border-0 m-0 p-0"
+                                      style={{ width: '70px' }}
+                                    >
+                                      {index === 0 ? (
+                                        <Form.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block text-center">
+                                          HORAS
+                                        </Form.Label>
+                                      ) : null}
+                                      <Form.Control
+                                        type="number"
+                                        plaintext
+                                        value={item.hours}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        placeholder="HORAS"
+                                        size="sm"
+                                        className="p-0 m-0 ps-2 pe-2 text-end"
+                                        step="any"
+                                      />
+                                    </Form.Group>
+
                                     <Col
                                       xs={12}
                                       md={12}
-                                      lg={2}
+                                      lg={4}
                                       className="d-flex justify-content-between"
                                     >
                                       <Form.Group
                                         as={Col}
                                         xs={10}
-                                        sm={4}
-                                        md="auto"
-                                        controlId={`WorkerManualfrequencyItems[${index}].hours`}
-                                        className="border-0 m-0 p-0"
-                                        style={{ width: '70px' }}
+                                        controlId={`WorkerManualfrequencyItems[${index}].obs`}
+                                        className="d-none d-md-block border-0 m-0 p-0"
                                       >
                                         {index === 0 ? (
-                                          <Form.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block text-center">
-                                            HORAS
+                                          <Form.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block">
+                                            OBSERVAÇÕES
                                           </Form.Label>
                                         ) : null}
                                         <Form.Control
-                                          type="number"
+                                          type="text"
                                           plaintext
-                                          value={item.hours}
+                                          value={item.obs}
                                           onChange={handleChange}
                                           onBlur={handleBlur}
-                                          placeholder="HORAS"
                                           size="sm"
-                                          className="p-0 m-0 ps-2 pe-2 text-end"
-                                          step="any"
+                                          className="p-0 m-0 ps-2 pe-2"
+                                          placeholder="Observação da ocorrência"
                                         />
                                       </Form.Group>
+
                                       <Col
-                                        as={Col}
                                         xs="2"
-                                        sm="auto"
                                         className="border-0 m-0 p-0 text-center"
                                       >
                                         {index === 0 ? (

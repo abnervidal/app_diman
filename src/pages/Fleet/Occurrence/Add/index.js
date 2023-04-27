@@ -19,17 +19,17 @@ import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
 
 const emptyValues = {
-  carId: [],
-  workerId: [],
-  carOccurrencetypeId: [],
+  CarId: '',
+  WorkerId: '',
+  CarOccurrencetypeId: '',
   data: '',
   obs: '',
 };
 
 const validationSchema = Yup.object().shape({
-  carId: Yup.number().required('Necessário selecionar o veículo!'),
-  workerId: Yup.string().required('Necessário selecionar o motorista!'),
-  carOccurrencetypeId: Yup.number().required(
+  CarId: Yup.number().required('Necessário selecionar o veículo!'),
+  WorkerId: Yup.string().required('Necessário selecionar o motorista!'),
+  CarOccurrencetypeId: Yup.number().required(
     'Necessário selecionar o tipo de ocorrência!'
   ),
   data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
@@ -49,14 +49,13 @@ export default function CarOccurrence({ initialValues = null }) {
         setIsLoading(true);
         const response = await axios.get('/workers/actives/');
         const response2 = await axios.get('/cars/');
-        const response3 = await axios.get('/caroccurrence/types');
+        const response3 = await axios.get('/cars/occurrences/types');
 
         setWorkers(response.data);
         setCars(response2.data);
         setOccurrencestypes(response3.data);
 
         setIsLoading(false);
-        console.log(2);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
         err.response?.data?.errors
@@ -74,7 +73,7 @@ export default function CarOccurrence({ initialValues = null }) {
       setIsLoading(true);
       console.log(values);
 
-      await axios.post(`/caroccurrence/`, values);
+      await axios.post(`/cars/occurrences/`, values);
       setIsLoading(false);
       resetForm();
       toast.success('Ocorrência Cadastrada Com Sucesso!');
@@ -130,7 +129,7 @@ export default function CarOccurrence({ initialValues = null }) {
                 <Form as BootstrapForm onReset={handleReset}>
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
-                      controlId="carId"
+                      controlId="CarId"
                       as={Col}
                       xs={12}
                       md={6}
@@ -138,12 +137,13 @@ export default function CarOccurrence({ initialValues = null }) {
                     >
                       <BootstrapForm.Label>CARRO</BootstrapForm.Label>
 
-                      <Field name="carId">
+                      <Field name="CarId">
                         {({ field }) => (
                           <Select
                             {...field}
+                            inputId="CarId"
                             className={
-                              errors.carId && touched.carId
+                              errors.CarId && touched.CarId
                                 ? 'is-invalid'
                                 : null
                             }
@@ -153,27 +153,27 @@ export default function CarOccurrence({ initialValues = null }) {
                             }))}
                             // styles={}
                             value={
-                              values.carId
+                              values.CarId
                                 ? cars.find(
-                                    (option) => option.value === values.carId
+                                    (option) => option.value === values.CarId
                                   )
                                 : null
                             }
                             onChange={(selectedOption) =>
-                              setFieldValue('carId', selectedOption.value)
+                              setFieldValue('CarId', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="carId"
+                        name="CarId"
                         component="div"
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
 
                     <BootstrapForm.Group
-                      controlId="workerId"
+                      controlId="WorkerId"
                       as={Col}
                       xs={12}
                       md={6}
@@ -181,12 +181,13 @@ export default function CarOccurrence({ initialValues = null }) {
                     >
                       <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
 
-                      <Field name="workerId">
+                      <Field name="WorkerId">
                         {({ field }) => (
                           <Select
                             {...field}
+                            inputId="WorkerId"
                             className={
-                              errors.workerId && touched.workerId
+                              errors.WorkerId && touched.WorkerId
                                 ? 'is-invalid'
                                 : null
                             }
@@ -208,15 +209,15 @@ export default function CarOccurrence({ initialValues = null }) {
                                 label: item.name,
                                 value: item.id,
                               }))
-                              .find((item) => item.value === values.workerId)}
+                              .find((item) => item.value === values.WorkerId)}
                             onChange={(selectedOption) =>
-                              setFieldValue('workerId', selectedOption.value)
+                              setFieldValue('WorkerId', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="workerId"
+                        name="WorkerId"
                         component="div"
                         className="invalid-feedback"
                       />
@@ -225,7 +226,7 @@ export default function CarOccurrence({ initialValues = null }) {
 
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
-                      controlId="carOccurrencetypeId"
+                      controlId="CarOccurrencetypeId"
                       as={Col}
                       xs={12}
                       md={8}
@@ -235,13 +236,14 @@ export default function CarOccurrence({ initialValues = null }) {
                         TIPO DE OCORRÊNCIA
                       </BootstrapForm.Label>
 
-                      <Field name="carOccurrencetypeId">
+                      <Field name="CarOccurrencetypeId">
                         {({ field }) => (
                           <Select
+                            inputId="CarOccurrencetypeId"
                             {...field}
                             className={
-                              errors.carOccurrencetypeId &&
-                              touched.carOccurrencetypeId
+                              errors.CarOccurrencetypeId &&
+                              touched.CarOccurrencetypeId
                                 ? 'is-invalid'
                                 : null
                             }
@@ -250,17 +252,17 @@ export default function CarOccurrence({ initialValues = null }) {
                               label: item.type,
                             }))}
                             value={
-                              values.carOccurrencetypeId
+                              values.CarOccurrencetypeId
                                 ? occurrencestypes.find(
                                     (option) =>
                                       option.value ===
-                                      values.carOccurrencetypeId
+                                      values.CarOccurrencetypeId
                                   )
                                 : null
                             }
                             onChange={(selectedOption) =>
                               setFieldValue(
-                                'carOccurrencetypeId',
+                                'CarOccurrencetypeId',
                                 selectedOption.value
                               )
                             }
@@ -268,7 +270,7 @@ export default function CarOccurrence({ initialValues = null }) {
                         )}
                       </Field>
                       <ErrorMessage
-                        name="carOccurrencetypeId"
+                        name="CarOccurrencetypeId"
                         component="div"
                         className="invalid-feedback"
                       />

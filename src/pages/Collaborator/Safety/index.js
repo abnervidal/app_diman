@@ -13,9 +13,17 @@ export default function index() {
             <Nav.Item>
               <Link
                 className="text-decoration-none"
-                to="/collaborator/safety/risk"
+                to="/collaborator/safety/risk/add"
               >
-                <Nav.Link href="#1">Serviços de Risco</Nav.Link>
+                <Nav.Link href="#1">Agendar Serviço de Risco</Nav.Link>
+              </Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Link
+                className="text-decoration-none"
+                to="/collaborator/safety/risk/list"
+              >
+                <Nav.Link href="#2">Listar Serviços de Risco</Nav.Link>
               </Link>
             </Nav.Item>
             <Nav.Item>
@@ -23,7 +31,7 @@ export default function index() {
                 className="text-decoration-none"
                 to="/collaborator/safety/epi"
               >
-                <Nav.Link href="#2">EPI's e Treinamentos</Nav.Link>
+                <Nav.Link href="#3">EPI's e Treinamentos</Nav.Link>
               </Link>
             </Nav.Item>
           </Nav>

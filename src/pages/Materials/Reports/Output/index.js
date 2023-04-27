@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import {
@@ -18,7 +18,7 @@ import {
   FaSearchMinus,
   FaExclamationTriangle,
   FaExclamation,
-  FaGripLinesVertical,
+  FaImages,
 } from 'react-icons/fa';
 
 import {
@@ -34,6 +34,15 @@ import {
   Form,
   Image,
 } from 'react-bootstrap';
+
+import LightGallery from 'lightgallery/react';
+// If you want you can use SCSS instead of css
+import 'lightgallery/scss/lightgallery.scss';
+import 'lightgallery/scss/lg-zoom.scss';
+
+// import plugins if you need
+import lgThumbnail from 'lightgallery/plugins/thumbnail';
+import lgZoom from 'lightgallery/plugins/zoom';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
@@ -522,23 +531,81 @@ export default function Index() {
         width: 120,
         disableResizing: true,
         disableSortBy: true,
-        Cell: ({ value }) => {
-          switch (value) {
-            case 'USO':
-              return <Badge bg="success">{value}</Badge>;
-            case 'EMPRÉSTIMO':
-              return <Badge bg="secondary">{value}</Badge>;
-            case 'DESCARTE':
-              return <Badge bg="warning">{value}</Badge>;
-            case 'DOAÇÃO':
-              return <Badge bg="info">{value}</Badge>;
-            case 'DEVOLUÇÃO':
-              return <Badge bg="dark">{value}</Badge>;
-            case 'EXTRAVIO':
-              return <Badge bg="danger">{value}</Badge>;
-            default:
-              return <Badge>{value}</Badge>;
+        Cell: ({ value, row }) => {
+          function TipoSaida({ param }) {
+            switch (param) {
+              case 'USO':
+                return <Badge bg="success">{param}</Badge>;
+              case 'EMPRÉSTIMO':
+                return <Badge bg="secondary">{param}</Badge>;
+              case 'DESCARTE':
+                return <Badge bg="warning">{param}</Badge>;
+              case 'DOAÇÃO':
+                return <Badge bg="info">{param}</Badge>;
+              case 'DEVOLUÇÃO':
+                return <Badge bg="dark">{param}</Badge>;
+              case 'EXTRAVIO':
+                return <Badge bg="danger">{param}</Badge>;
+              default:
+                return <Badge>{param}</Badge>;
+            }
           }
+
+          const getItems = useCallback(
+            () =>
+              row.original.MaterialOutFiles.map((item) => (
+                <a
+                  key={item.order}
+                  // data-lg-size={item.size}
+                  // className="gallery-item"
+                  href={`${process.env.REACT_APP_BASE_AXIOS_REST}/uploads/materials/out/images/${item.filename}`}
+                >
+                  <img
+                    alt={`Imagem ${item.order}`}
+                    // style={{ maxWidth: '280px' }}
+                    className="d-none"
+                    src={`${process.env.REACT_APP_BASE_AXIOS_REST}/uploads/materials/out/images/${item.filename}`}
+                    crossOrigin="anonymous"
+                  />
+                  {item.order === 1 ? (
+                    <OverlayTrigger
+                      placement="left"
+                      delay={{ show: 250, hide: 400 }}
+                      overlay={(props) => renderTooltip(props, 'Ver fotos')}
+                    >
+                      <Button
+                        // size="sm"
+                        variant="outline-primary"
+                        className="border-0 m-0"
+                      >
+                        <FaImages />
+                      </Button>
+                    </OverlayTrigger>
+                  ) : null}
+                </a>
+              )),
+            []
+          );
+
+          return (
+            <>
+              <TipoSaida param={value} />
+              {row.original.MaterialOutFiles.length ? (
+                <div>
+                  {' '}
+                  <Col xs="auto" className="text-center m-0 p-0 pt-1 px-1">
+                    <LightGallery
+                      // onInit={onInit}
+                      speed={500}
+                      plugins={[lgThumbnail, lgZoom]}
+                    >
+                      {getItems()}
+                    </LightGallery>
+                  </Col>
+                </div>
+              ) : null}
+            </>
+          );
         },
         Filter: SelectColumnFilter,
         filter: 'includes',
