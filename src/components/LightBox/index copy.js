@@ -1,6 +1,5 @@
 import React from 'react';
 import LightGallery from 'lightgallery/react';
-import { Button, Image } from 'react-bootstrap';
 
 // import styles
 import 'lightgallery/css/lightgallery.css';
@@ -22,29 +21,16 @@ export default function Index() {
   return (
     <div className="App">
       <LightGallery onInit={onInit} speed={500} plugins={[lgThumbnail, lgZoom]}>
-        <a href="http://192.168.1.13:3001/uploads/materials/out/images/1682466726636_10284.png">
-          <Image
-            alt="img1"
-            src="http://192.168.1.13:3001/uploads/materials/out/images/1682466726636_10284.png"
-            className="d-none"
-            crossOrigin=""
-          />
-          <Button>Foto 1</Button>
+        <a href="https://source.unsplash.com/1200x800/?water">
+          <img alt="img1" src="https://source.unsplash.com/1200x800/?water" />
         </a>
         <a href="https://source.unsplash.com/1200x800/?asphalt">
-          <img
-            alt="img1"
-            src="https://source.unsplash.com/1200x800/?asphalt"
-            className="d-none"
-          />
+          <img alt="img1" src="https://source.unsplash.com/1200x800/?asphalt" />
         </a>
         <a href="https://source.unsplash.com/1200x800/?energy">
-          <img
-            alt="img2"
-            src="https://source.unsplash.com/1200x800/?energy"
-            className="d-none"
-          />
+          <img alt="img2" src="https://source.unsplash.com/1200x800/?energy" />
         </a>
+        ...
       </LightGallery>
     </div>
   );

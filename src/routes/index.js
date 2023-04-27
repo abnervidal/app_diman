@@ -4,6 +4,7 @@ import RequireAuth from './RequireAuth';
 
 import usersRoletypes from '../assets/JSON/data/usersRoletypes.json';
 
+import PhotoSwipe from '../components/PhotoSwipe';
 import LightBox from '../components/LightBox';
 import Aluno from '../pages/Aluno';
 import Alunos from '../pages/Alunos';
@@ -39,6 +40,7 @@ export default function RoutesPages() {
     <Routes>
       {/* public routes */}
       <Route path="/lightbox" element={<LightBox />} />
+      <Route path="/photoswipe" element={<PhotoSwipe />} />
 
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />
