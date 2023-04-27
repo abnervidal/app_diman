@@ -278,18 +278,25 @@ export default function Header() {
                 >
                   Ocorrência
                 </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item
+                  href="#29"
+                  onClick={() => navigate('/fleet/inspection')}
+                >
+                  Vistoria
+                </NavDropdown.Item>
               </NavDropdown>
 
               <NavDropdown title="ADM" id="collasible-nav-dropdown">
                 <NavDropdown.Item
-                  href="#29"
+                  href="#30"
                   onClick={() => navigate('/adm/users/list')}
                 >
                   Usuários
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item
-                  href="#30"
+                  href="#31"
                   onClick={() => navigate('/adm/unidades')}
                 >
                   Unidades

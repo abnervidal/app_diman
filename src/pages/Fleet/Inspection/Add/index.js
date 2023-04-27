@@ -19,27 +19,33 @@ import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
 
 const emptyValues = {
-  carId: [],
-  workerId: [],
-  carOccurrencetypeId: [],
-  data: '',
+  carId: '',
+  date: '',
   obs: '',
+  vistoriador: '',
+  conferidor: '',
 };
 
+const riskOptions = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+];
+
 const validationSchema = Yup.object().shape({
-  carId: Yup.number().required('Necessário selecionar o veículo!'),
-  workerId: Yup.string().required('Necessário selecionar o motorista!'),
-  carOccurrencetypeId: Yup.number().required(
-    'Necessário selecionar o tipo de ocorrência!'
-  ),
-  data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
+  // carId: Yup.number().required('Necessário selecionar o veículo!'),
+  // workerId: Yup.string().required('Necessário selecionar o motorista!'),
+  // carOccurrencetypeId: Yup.number().required(
+  //   'Necessário selecionar o tipo de ocorrência!'
+  // ),
+  // data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
 });
 
-export default function CarOccurrence({ initialValues = null }) {
+export default function CarInspection({ initialValues = null }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [workers, setWorkers] = useState([]);
-  const [cars, setCars] = useState([]);
-  const [occurrencestypes, setOccurrencestypes] = useState([]);
+  // const [workers, setWorkers] = useState([]);
+  // const [cars, setCars] = useState([]);
+  // const [occurrencestypes, setOccurrencestypes] = useState([]);
 
   const isEditMode = !!initialValues;
 
@@ -47,13 +53,13 @@ export default function CarOccurrence({ initialValues = null }) {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/workers/actives/');
-        const response2 = await axios.get('/cars/');
-        const response3 = await axios.get('/caroccurrence/types');
+        // const response = await axios.get('/workers/actives/');
+        // const response2 = await axios.get('/cars/');
+        // const response3 = await axios.get('/caroccurrence/types');
 
-        setWorkers(response.data);
-        setCars(response2.data);
-        setOccurrencestypes(response3.data);
+        // setWorkers(response.data);
+        // setCars(response2.data);
+        // setOccurrencestypes(response3.data);
 
         setIsLoading(false);
         console.log(2);
@@ -74,10 +80,10 @@ export default function CarOccurrence({ initialValues = null }) {
       setIsLoading(true);
       console.log(values);
 
-      await axios.post(`/caroccurrence/`, values);
+      // await axios.post(`/car/inspections/`, values);
       setIsLoading(false);
       resetForm();
-      toast.success('Ocorrência Cadastrada Com Sucesso!');
+      toast.success('Vistoria Cadastrada Com Sucesso!');
     } catch (err) {
       setIsLoading(true);
       console.log(values);
@@ -105,7 +111,7 @@ export default function CarOccurrence({ initialValues = null }) {
               className=" text-center"
               style={{ background: primaryDarkColor, color: 'white' }}
             >
-              <span className="fs-5">ADICIONAR OCORRÊNCIA</span>
+              <span className="fs-5">CADASTRAR VISTORIA</span>
             </Col>
           </Row>
           <Row className="pt-2">
@@ -133,7 +139,7 @@ export default function CarOccurrence({ initialValues = null }) {
                       controlId="carId"
                       as={Col}
                       xs={12}
-                      md={6}
+                      md={8}
                       className="pb-3"
                     >
                       <BootstrapForm.Label>CARRO</BootstrapForm.Label>
@@ -147,11 +153,13 @@ export default function CarOccurrence({ initialValues = null }) {
                                 ? 'is-invalid'
                                 : null
                             }
-                            options={cars.map((item) => ({
-                              value: item.id,
-                              label: `${item.brand}   ${item.model}  -  ${item.plate}`,
-                            }))}
-                            // styles={}
+                            options={
+                              riskOptions
+                              // cars.map((item) => ({
+                              // value: item.id,
+                              // label: `${item.brand}   ${item.model}  -  ${item.plate}`,
+                              // }))
+                            }
                             value={
                               values.carId
                                 ? cars.find(
@@ -171,137 +179,62 @@ export default function CarOccurrence({ initialValues = null }) {
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
-
                     <BootstrapForm.Group
-                      controlId="workerId"
-                      as={Col}
-                      xs={12}
-                      md={6}
-                      className="pb-3"
-                    >
-                      <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
-
-                      <Field name="workerId">
-                        {({ field }) => (
-                          <Select
-                            {...field}
-                            className={
-                              errors.workerId && touched.workerId
-                                ? 'is-invalid'
-                                : null
-                            }
-                            options={workers
-                              .filter(
-                                (item) =>
-                                  item.WorkerContracts[0].WorkerJobtypeId === 26
-                              )
-                              .map((item) => ({
-                                label: item.name,
-                                value: item.id,
-                              }))}
-                            value={workers
-                              .filter(
-                                (item) =>
-                                  item.WorkerContracts[0].WorkerJobtypeId === 26
-                              )
-                              .map((item) => ({
-                                label: item.name,
-                                value: item.id,
-                              }))
-                              .find((item) => item.value === values.workerId)}
-                            onChange={(selectedOption) =>
-                              setFieldValue('workerId', selectedOption.value)
-                            }
-                          />
-                        )}
-                      </Field>
-                      <ErrorMessage
-                        name="workerId"
-                        component="div"
-                        className="invalid-feedback"
-                      />
-                    </BootstrapForm.Group>
-                  </Row>
-
-                  <Row className="d-flex justify-content-center align-items-top">
-                    <BootstrapForm.Group
-                      controlId="carOccurrencetypeId"
-                      as={Col}
-                      xs={12}
-                      md={8}
-                      className="pb-3"
-                    >
-                      <BootstrapForm.Label>
-                        TIPO DE OCORRÊNCIA
-                      </BootstrapForm.Label>
-
-                      <Field name="carOccurrencetypeId">
-                        {({ field }) => (
-                          <Select
-                            {...field}
-                            className={
-                              errors.carOccurrencetypeId &&
-                              touched.carOccurrencetypeId
-                                ? 'is-invalid'
-                                : null
-                            }
-                            options={occurrencestypes.map((item) => ({
-                              value: item.id,
-                              label: item.type,
-                            }))}
-                            value={
-                              values.carOccurrencetypeId
-                                ? occurrencestypes.find(
-                                    (option) =>
-                                      option.value ===
-                                      values.carOccurrencetypeId
-                                  )
-                                : null
-                            }
-                            onChange={(selectedOption) =>
-                              setFieldValue(
-                                'carOccurrencetypeId',
-                                selectedOption.value
-                              )
-                            }
-                          />
-                        )}
-                      </Field>
-                      <ErrorMessage
-                        name="carOccurrencetypeId"
-                        component="div"
-                        className="invalid-feedback"
-                      />
-                    </BootstrapForm.Group>
-
-                    <BootstrapForm.Group
-                      controlId="data"
+                      controlId="date"
                       as={Col}
                       xs={12}
                       md={4}
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
-                        DATA DA OCORRÊNCIA
+                        DATA DA VISTORIA
                       </BootstrapForm.Label>
                       <Field
                         xs={6}
                         className={
-                          errors.data && touched.data ? 'is-invalid' : null
+                          errors.date && touched.date ? 'is-invalid' : null
                         }
                         type="date"
-                        name="data"
+                        name="date"
                         as={BootstrapForm.Control}
                         placeholder="Código"
                       />
                       <ErrorMessage
-                        name="data"
+                        name="date"
                         component="div"
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
                   </Row>
-                  <Row className="d-flex justify-content-center align-items-top">
+
+                  <Row className="d-flex justify-content-center align-items-center">
+                    <Col
+                      xs={12}
+                      className="text-center"
+                      style={{ background: primaryDarkColor, color: 'white' }}
+                    >
+                      <span className="fs-6">INTERNA</span>
+                    </Col>
+                  </Row>
+                  <Row className="d-flex justify-content-center align-items-center">
+                    <Col
+                      xs={12}
+                      className="text-center"
+                      style={{ background: primaryDarkColor, color: 'white' }}
+                    >
+                      <span className="fs-6">EXTERNA</span>
+                    </Col>
+                  </Row>
+
+                  <Row className="d-flex justify-content-center align-items-center">
+                    <Col
+                      xs={12}
+                      className="text-center"
+                      style={{ background: primaryDarkColor, color: 'white' }}
+                    >
+                      <span className="fs-6">OBSERVAÇÕES</span>
+                    </Col>
+
                     <BootstrapForm.Group
                       controlId="obs"
                       as={Col}
@@ -309,7 +242,7 @@ export default function CarOccurrence({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
-                        ESPECIFICAÇÕES DA OCORRÊNCIA
+                        OBSERVAÇÕES IMPORTANTES DA VISTORIA
                       </BootstrapForm.Label>
                       <BootstrapForm.Control
                         as="textarea"
@@ -317,7 +250,7 @@ export default function CarOccurrence({ initialValues = null }) {
                         type="text"
                         value={values.obs}
                         onChange={handleChange}
-                        placeholder="Descreva mais detalhes da ocorrência"
+                        placeholder="Descreva detalhes importantes da vistoria"
                       />
                       <ErrorMessage
                         name="obs"

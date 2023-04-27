@@ -11,6 +11,10 @@ import Ocurrence from './Occurrence';
 import ListOccurrence from './Occurrence/List';
 import AddOccurrence from './Occurrence/Add';
 
+import Inspection from './Inspection';
+import ListInspection from './Inspection/List';
+import AddInspection from './Inspection/Add';
+
 const roles = usersRoletypes.reduce(
   (acc, cur) => ({ ...acc, [cur.role]: cur.id }),
   {}
@@ -27,6 +31,11 @@ export default function fleetRoutes() {
       <Route path="ocorrencia" element={<Ocurrence />}>
         <Route path="listocorrencia" element={<ListOccurrence />} />{' '}
         <Route path="addocorrencia" element={<AddOccurrence />} />{' '}
+      </Route>
+
+      <Route path="inspection" element={<Inspection />}>
+        <Route path="listinspection" element={<ListInspection />} />{' '}
+        <Route path="addinspection" element={<AddInspection />} />{' '}
       </Route>
     </Routes>
   );
