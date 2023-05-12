@@ -14,16 +14,19 @@ import Select from 'react-select';
 import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
+import { useSelector } from 'react-redux';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
+import PreviewMultipleImages from '../../../../components/PreviewMultipleImages';
 
 const emptyValues = {
-  carId: '',
+  CarId: '',
+  milage: '',
   date: '',
+  internal: '',
+  external: '',
   obs: '',
-  vistoriador: '',
-  conferidor: '',
 };
 
 const riskOptions = [
@@ -33,19 +36,15 @@ const riskOptions = [
 ];
 
 const validationSchema = Yup.object().shape({
-  // carId: Yup.number().required('Necessário selecionar o veículo!'),
-  // workerId: Yup.string().required('Necessário selecionar o motorista!'),
-  // carOccurrencetypeId: Yup.number().required(
-  //   'Necessário selecionar o tipo de ocorrência!'
-  // ),
-  // data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
+  // CarId: Yup.number().required('Necessário selecionar o veículo!'),
+  // date: Yup.date().required('Necessário selecionar a data da ocorrência!'),
 });
 
 export default function CarInspection({ initialValues = null }) {
+  const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
-  // const [workers, setWorkers] = useState([]);
-  // const [cars, setCars] = useState([]);
-  // const [occurrencestypes, setOccurrencestypes] = useState([]);
+  const [cars, setCars] = useState([]);
+  const [files, setFiles] = useState([]);
 
   const isEditMode = !!initialValues;
 
@@ -53,14 +52,8 @@ export default function CarInspection({ initialValues = null }) {
     async function getData() {
       try {
         setIsLoading(true);
-        // const response = await axios.get('/workers/actives/');
-        // const response2 = await axios.get('/cars/');
-        // const response3 = await axios.get('/caroccurrence/types');
-
-        // setWorkers(response.data);
-        // setCars(response2.data);
-        // setOccurrencestypes(response3.data);
-
+        const response = await axios.get('/cars/');
+        setCars(response.data);
         setIsLoading(false);
         console.log(2);
       } catch (err) {
@@ -75,13 +68,66 @@ export default function CarInspection({ initialValues = null }) {
     getData();
   }, []);
 
+  const toFormData = ((f) => f(f))((h) => (f) => f((x) => h(h)(f)(x)))(
+    (f) => (fd) => (pk) => (d) => {
+      if (d instanceof Object) {
+        Object.keys(d).forEach((k) => {
+          const v = d[k];
+          if (pk) k = `${pk}[${k}]`;
+          if (
+            v instanceof Object &&
+            !(v instanceof Date) &&
+            !(v instanceof File)
+          ) {
+            return f(fd)(k)(v);
+          }
+          fd.append(k, v);
+        });
+      }
+      return fd;
+    }
+  )(new FormData())();
+
   const handleSubmit = async (values, resetForm) => {
+    const formattedValues = {
+      ...Object.fromEntries(
+        Object.entries(values).filter(([_, v]) => v != null)
+      ),
+    }; // LIMPANDO CHAVES NULL E UNDEFINED
+
+    Object.keys(formattedValues).forEach((key) => {
+      if (formattedValues[key] === '') {
+        delete formattedValues[key];
+      }
+    }); // LIMPANDO CHAVES `EMPTY STRINGS`
+
+    formattedValues.UserId = userId;
+
+    let formData;
+    if (files.length > 0) {
+      formData = toFormData(formattedValues);
+      // eslint-disable-next-line no-restricted-syntax
+      for (const file of files) {
+        formData.append('photos', file.file);
+      }
+    }
+
     try {
       setIsLoading(true);
-      console.log(values);
-
-      // await axios.post(`/car/inspections/`, values);
+      if (files.length > 0) {
+        await axios.post(`/cars/inspections`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        // for (const pair of formData.entries()) {
+        //   console.log(`${pair[0]} - ${pair[1]}`);
+        // }
+      } else {
+        await axios.post(`/cars/inspections`, formattedValues);
+      }
       setIsLoading(false);
+      setFiles([]);
       resetForm();
       toast.success('Vistoria Cadastrada Com Sucesso!');
     } catch (err) {
@@ -96,9 +142,18 @@ export default function CarInspection({ initialValues = null }) {
   };
 
   const handleResetAll = (values) => {
-    console.log(values);
+    // console.log(values);
     // colocar outras coisas após o reset que precisar
   };
+
+  // const emptyValues = {
+  //   CarId: '',
+  //   milage: '',
+  //   date: '',
+  //   internal: '',
+  //   external: '',
+  //   obs: '',
+  // };
 
   return (
     <>
@@ -136,45 +191,68 @@ export default function CarInspection({ initialValues = null }) {
                 <Form as BootstrapForm onReset={handleReset}>
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
-                      controlId="carId"
+                      controlId="CarId"
                       as={Col}
                       xs={12}
-                      md={8}
+                      md={6}
                       className="pb-3"
                     >
                       <BootstrapForm.Label>CARRO</BootstrapForm.Label>
 
-                      <Field name="carId">
+                      <Field name="CarId">
                         {({ field }) => (
                           <Select
                             {...field}
                             className={
-                              errors.carId && touched.carId
+                              errors.CarId && touched.CarId
                                 ? 'is-invalid'
                                 : null
                             }
-                            options={
-                              riskOptions
-                              // cars.map((item) => ({
-                              // value: item.id,
-                              // label: `${item.brand}   ${item.model}  -  ${item.plate}`,
-                              // }))
-                            }
+                            options={cars.map((item) => ({
+                              value: item.id,
+                              label: `${item.brand}   ${item.model}  -  ${item.plate}`,
+                            }))}
                             value={
-                              values.carId
+                              values.CarId
                                 ? cars.find(
-                                    (option) => option.value === values.carId
+                                    (option) => option.value === values.CarId
                                   )
                                 : null
                             }
                             onChange={(selectedOption) =>
-                              setFieldValue('carId', selectedOption.value)
+                              setFieldValue('CarId', selectedOption.value)
                             }
                           />
                         )}
                       </Field>
                       <ErrorMessage
-                        name="carId"
+                        name="CarId"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+                    <BootstrapForm.Group
+                      controlId="milage"
+                      as={Col}
+                      xs={12}
+                      md={3}
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>QUILOMETRAGEM</BootstrapForm.Label>
+                      <Field
+                        type="number"
+                        as={BootstrapForm.Control}
+                        // mask={Number}
+                        value={values.milage}
+                        isInvalid={touched.milage && !!errors.milage}
+                        placeholder="100000"
+                        // onBlur={handleBlur}
+                        // onAccept={(value, mask) => {
+                        //   setFieldValue(mask.el.input.id, mask.unmaskedValue);
+                        // }}
+                      />
+                      <ErrorMessage
+                        name="milage"
                         component="div"
                         className="invalid-feedback"
                       />
@@ -183,7 +261,7 @@ export default function CarInspection({ initialValues = null }) {
                       controlId="date"
                       as={Col}
                       xs={12}
-                      md={4}
+                      md={3}
                       className="pb-3"
                     >
                       <BootstrapForm.Label>
@@ -215,6 +293,29 @@ export default function CarInspection({ initialValues = null }) {
                     >
                       <span className="fs-6">INTERNA</span>
                     </Col>
+                    <BootstrapForm.Group
+                      controlId="internal"
+                      as={Col}
+                      xs={12}
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>
+                        AVARIAS INTERNAS
+                      </BootstrapForm.Label>
+                      <BootstrapForm.Control
+                        as="textarea"
+                        rows={3}
+                        type="text"
+                        value={values.internal}
+                        onChange={handleChange}
+                        placeholder="Descreva detalhes importantes da vistoria"
+                      />
+                      <ErrorMessage
+                        name="internal"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
                   </Row>
                   <Row className="d-flex justify-content-center align-items-center">
                     <Col
@@ -224,6 +325,29 @@ export default function CarInspection({ initialValues = null }) {
                     >
                       <span className="fs-6">EXTERNA</span>
                     </Col>
+                    <BootstrapForm.Group
+                      controlId="external"
+                      as={Col}
+                      xs={12}
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>
+                        AVARIAS EXTERNAS
+                      </BootstrapForm.Label>
+                      <BootstrapForm.Control
+                        as="textarea"
+                        rows={3}
+                        type="text"
+                        value={values.external}
+                        onChange={handleChange}
+                        placeholder="Descreva detalhes importantes da vistoria"
+                      />
+                      <ErrorMessage
+                        name="external"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
                   </Row>
 
                   <Row className="d-flex justify-content-center align-items-center">
@@ -258,6 +382,16 @@ export default function CarInspection({ initialValues = null }) {
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
+                  </Row>
+                  <Row
+                    className="text-center mt-3"
+                    style={{ background: primaryDarkColor, color: 'white' }}
+                  >
+                    <span className="fs-6">REGISTROS FOTOGRÁFICOS</span>
+                  </Row>
+
+                  <Row>
+                    <PreviewMultipleImages files={files} setFiles={setFiles} />
                   </Row>
 
                   <Button variant="primary" type="submit">

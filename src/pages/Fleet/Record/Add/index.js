@@ -13,6 +13,7 @@ import Select from 'react-select';
 import axios from '../../../../services/axios';
 import { primaryDarkColor } from '../../../../config/colors';
 import Loading from '../../../../components/Loading';
+import PreviewMultipleImages from '../../../../components/PreviewMultipleImages';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function Index() {
   };
   const [initialValues, setInitialValues] = useState(template);
   const [optionsExtra, setoptionsExtra] = useState(false);
+  const [files, setFiles] = useState([]);
 
   const schema = yup.object().shape({
     brand: yup.string().required('Requerido'),
@@ -70,7 +72,6 @@ export default function Index() {
   const handleStore = async (values, resetForm) => {
     try {
       setIsLoading(true);
-      console.log(values);
 
       await axios.post(`/cars/`, values);
       setIsLoading(false);
@@ -121,7 +122,7 @@ export default function Index() {
             }) => (
               <Form noValidate autoComplete="off">
                 <Row className="d-flex justify-content-center align-items-center pb-4">
-                  <Col md={10} lg={8}>
+                  <Col xs={12}>
                     <Row>
                       <Form.Group
                         as={Col}
@@ -485,7 +486,7 @@ export default function Index() {
                           {errors.obs}
                         </Form.Control.Feedback>
                       </Form.Group>
-                      {!optionsExtra ? (
+                      {/* {!optionsExtra ? (
                         <Col xs="auto" className="ps-1 pt-4">
                           <Button
                             type="submit"
@@ -579,9 +580,20 @@ export default function Index() {
                             </Button>
                           </Col>
                         </>
-                      ) : null}
+                      ) : null} */}
                     </Row>
                   </Col>
+                </Row>
+
+                <Row
+                  className="text-center mt-3"
+                  style={{ background: primaryDarkColor, color: 'white' }}
+                >
+                  <span className="fs-6">REGISTROS FOTOGRÁFICOS</span>
+                </Row>
+
+                <Row>
+                  <PreviewMultipleImages files={files} setFiles={setFiles} />
                 </Row>
 
                 <Row className="justify-content-center pt-2 pb-4">
@@ -598,9 +610,9 @@ export default function Index() {
                     </Col>
                     <Col xs="auto" className="text-center">
                       <Button
-                        variant="success"
+                        // variant="success"
                         type="submit"
-                        onClick={submitForm}
+                        // onClick={submitForm}
                       >
                         Cadastrar
                       </Button>
