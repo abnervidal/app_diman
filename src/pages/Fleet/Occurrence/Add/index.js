@@ -329,12 +329,30 @@ export default function CarOccurrence({ initialValues = null }) {
                     </BootstrapForm.Group>
                   </Row>
 
-                  <Button variant="primary" type="submit">
+                  {/* <Button variant="primary" type="submit">
                     {isEditMode ? 'Save' : 'Add'}
                   </Button>
                   <Button variant="danger" type="reset">
                     Reset
-                  </Button>
+                  </Button> */}
+                  <Row className="justify-content-center pt-2 pb-4">
+                    <>
+                      <Col xs="auto" className="text-center">
+                        <Button variant="warning" type="reset">
+                          Limpar
+                        </Button>
+                      </Col>
+                      <Col xs="auto" className="text-center">
+                        <Button
+                          // variant="success"
+                          type="submit"
+                          // onClick={submitForm}
+                        >
+                          Cadastrar
+                        </Button>
+                      </Col>
+                    </>
+                  </Row>
                 </Form>
               )}
             </Formik>
