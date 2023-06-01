@@ -2,24 +2,28 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
-import { Container, Row, Card } from 'react-bootstrap';
+import { Container, Row, Card, Col, Badge } from 'react-bootstrap';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
 // import generic table from material's components with global filter and nested row
 import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
+import TableNestedrow from '../../components/TableNestedRow';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
+  const [cars, setCars] = useState([]);
   const [occurrences, setOccurrences] = useState([]);
 
   useEffect(() => {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/cars/occurrences/');
-        setOccurrences(response.data);
+        const response = await axios.get('/cars/');
+        // const response2 = await axios.get('/cars/occurrences');
+        setCars(response.data);
+        // setOccurrences(response2.data);
         setIsLoading(false);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
@@ -36,6 +40,25 @@ export default function Index() {
   const columns = React.useMemo(
     () => [
       {
+        // Make an expander cell
+        Header: ({ getToggleAllRowsExpandedProps, isAllRowsExpanded }) => (
+          <span {...getToggleAllRowsExpandedProps()}>
+            {isAllRowsExpanded ? '▽' : '▷'}
+          </span>
+        ),
+        id: 'expander', // It needs an ID
+        width: 30,
+        disableResizing: true,
+        Cell: ({ row }) => (
+          // Use Cell to render an expander for each row.
+          // We can use the getToggleRowExpandedProps prop-getter
+          // to build the expander.
+          <span {...row.getToggleRowExpandedProps()}>
+            {row.isExpanded ? '▽' : '▷'}
+          </span>
+        ),
+      },
+      {
         Header: 'ID',
         accessor: 'id',
         width: 50,
@@ -43,24 +66,31 @@ export default function Index() {
         isVisible: window.innerWidth > 768,
       },
       {
-        Header: 'Tipo de ocorrência',
-        accessor: (originalRow) => originalRow.CarOccurrencetype.type,
-        width: 150,
-        disableResizing: true,
+        Header: 'Apelido',
+        accessor: 'alias',
       },
-      // {
-      //   Header: 'NOME FANTASIA',
-      //   accessor: 'nomeFantasia',
-      // },
-      // {
-      //   Header: 'RAZÃO SOCIAL',
-      //   accessor: 'razaoSocial',
-      // },
+      {
+        Header: 'Marca',
+        accessor: 'brand',
+      },
+      {
+        Header: 'Modelo',
+        accessor: 'model',
+      },
+      {
+        Header: 'Placa',
+        accessor: 'plate',
+      },
+      {
+        Header: 'Categoria',
+        accessor: 'CartypeId',
+      },
     ],
     []
   );
 
-  const data = React.useMemo(() => occurrences, [occurrences]);
+  const data = React.useMemo(() => cars, [cars]);
+  // const data2 = React.useMemo(() => occurrences, [occurrences]);
 
   const defaultColumn = React.useMemo(
     () => ({
@@ -76,7 +106,7 @@ export default function Index() {
   const initialState = {
     sortBy: [
       {
-        id: 'id',
+        id: 'name',
         asc: true,
       },
     ],
@@ -113,26 +143,147 @@ export default function Index() {
     []
   );
 
-  // Create a function that will render our row sub components
-  const renderRowSubComponent = React.useCallback(
+  const renderRowSubSubComponent = React.useCallback(
     ({ row }) => (
       <>
-        <span className="fw-bold">Especificação:</span>{' '}
-        {row.original.specification}
+        <span className="fw-bold">Especificação:</span>
+        {row.original.obs}
       </>
     ),
     []
   );
 
+  // Create a function that will render our row sub components
+  const renderRowSubComponent = React.useCallback(({ row }) => {
+    const subColumnsOccurrences = [
+      {
+        // Make an expander cell
+        Header: ({ getToggleAllRowsExpandedProps, isAllRowsExpanded }) => (
+          <span {...getToggleAllRowsExpandedProps()}>
+            {isAllRowsExpanded ? '▽' : '▷'}
+          </span>
+        ),
+        id: 'expander', // It needs an ID
+        width: 30,
+        disableResizing: true,
+        Cell: ({ row }) => (
+          // Use Cell to render an expander for each row.
+          // We can use the getToggleRowExpandedProps prop-getter
+          // to build the expander.
+          <span {...row.getToggleRowExpandedProps()}>
+            {row.isExpanded ? '▽' : '▷'}
+          </span>
+        ),
+      },
+      // {
+      //   Header: 'Carro',
+      //   accessor: 'CarId',
+      //   width: 120,
+      //   disableResizing: true,
+      //   disableSortBy: true,
+      //   filter: 'rangeDate',
+      // },
+      {
+        Header: 'Motorista',
+        accessor: 'WorkerId',
+      },
+      {
+        Header: 'Tipo de Ocorrência',
+        accessor: 'CarOccurrencetypeId',
+      },
+      {
+        Header: 'Data da Ocorrência',
+        accessor: 'data',
+      },
+    ];
+
+    return (
+      <>
+        <Row className="mb-2">
+          <Col>
+            {' '}
+            <Badge>OCORRÊNCIAS DO VEÍCULO</Badge>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <TableNestedrow
+              style={{ padding: 0, margin: 0 }}
+              columns={subColumnsOccurrences}
+              data={row.original.CarOccurrences}
+              defaultColumn={{
+                minWidth: 30,
+                width: 50,
+                maxWidth: 800,
+              }}
+              initialState={{
+                hiddenColumns: [
+                  ...columns
+                    .filter((col) => col.isVisible === false)
+                    .map((col) => col.id),
+                  ...columns
+                    .filter((col) => col.isVisible === false)
+                    .map((col) => col.accessor),
+                ],
+              }}
+              filterTypes={filterTypes}
+              renderRowSubComponent={renderRowSubSubComponent}
+            />
+          </Col>
+        </Row>
+        {/* <Row className="mb-2">
+          <Col>
+            {' '}
+            <Badge>DEMAIS INFORMAÇÕES SOBRE O VEÍCULO</Badge>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <TableNestedrow
+              style={{ padding: 0, margin: 0 }}
+              columns={subColumnsCars}
+              data={[row.original]}
+              defaultColumn={{
+                // Let's set up our default Filter UI
+                // Filter: DefaultColumnFilter,
+                minWidth: 30,
+                width: 50,
+                maxWidth: 800,
+              }}
+              initialState={{
+                // sortBy: [
+                //   {
+                //     id: 'name',
+                //     asc: true,
+                //   },
+                // ],
+                hiddenColumns: [
+                  ...columns
+                    .filter((col) => col.isVisible === false)
+                    .map((col) => col.id),
+                  ...columns
+                    .filter((col) => col.isVisible === false)
+                    .map((col) => col.accessor),
+                ],
+              }}
+              filterTypes={filterTypes}
+              renderRowSubComponent={renderRowSubSubComponent}
+            />
+          </Col>
+        </Row> */}
+      </>
+    );
+  }, []);
+
   return (
     <>
       {' '}
-      {console.log(occurrences)}
+      {console.log(cars)}
       <Loading isLoading={isLoading} />
       <Container>
         <Row className="text-center py-3">
-          <Card.Title>Ocorrências</Card.Title>
-          <Card.Text>Ocorrências diversas</Card.Text>
+          <Card.Title>Automóveis Cadastrados</Card.Title>
+          <Card.Text>Cadastros realizados no sisman.</Card.Text>
         </Row>
 
         <TableGfilterNestedrow

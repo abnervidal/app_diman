@@ -638,12 +638,6 @@ export default function Index() {
                 maxWidth: 800,
               }}
               initialState={{
-                // sortBy: [
-                //   {
-                //     id: 'name',
-                //     asc: true,
-                //   },
-                // ],
                 hiddenColumns: [
                   ...columns
                     .filter((col) => col.isVisible === false)

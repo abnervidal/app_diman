@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
+import PreviewMultipleImages from '../../../../components/PreviewMultipleImages';
 
 const emptyValues = {
   CarId: '',
@@ -40,6 +41,7 @@ export default function CarOccurrence({ initialValues = null }) {
   const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
   const [occurrencestypes, setOccurrencestypes] = useState([]);
+  const [files, setFiles] = useState([]);
 
   const isEditMode = !!initialValues;
 
@@ -68,13 +70,64 @@ export default function CarOccurrence({ initialValues = null }) {
     getData();
   }, []);
 
+  const toFormData = ((f) => f(f))((h) => (f) => f((x) => h(h)(f)(x)))(
+    (f) => (fd) => (pk) => (d) => {
+      if (d instanceof Object) {
+        Object.keys(d).forEach((k) => {
+          const v = d[k];
+          if (pk) k = `${pk}[${k}]`;
+          if (
+            v instanceof Object &&
+            !(v instanceof Date) &&
+            !(v instanceof File)
+          ) {
+            return f(fd)(k)(v);
+          }
+          fd.append(k, v);
+        });
+      }
+      return fd;
+    }
+  )(new FormData())();
+
   const handleSubmit = async (values, resetForm) => {
+    const formattedValues = {
+      ...Object.fromEntries(
+        Object.entries(values).filter(([_, v]) => v != null)
+      ),
+    }; // LIMPANDO CHAVES NULL E UNDEFINED
+
+    Object.keys(formattedValues).forEach((key) => {
+      if (formattedValues[key] === '') {
+        delete formattedValues[key];
+      }
+    }); // LIMPANDO CHAVES `EMPTY STRINGS`
+
+    let formData;
+    if (files.length > 0) {
+      formData = toFormData(formattedValues);
+      // eslint-disable-next-line no-restricted-syntax
+      for (const file of files) {
+        formData.append('photos', file.file);
+      }
+    }
+
     try {
       setIsLoading(true);
-      console.log(values);
-
-      await axios.post(`/cars/occurrences/`, values);
+      if (files.length > 0) {
+        await axios.post(`/cars/occurrences/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        // for (const pair of formData.entries()) {
+        //   console.log(`${pair[0]} - ${pair[1]}`);
+        // }
+      } else {
+        await axios.post(`/cars/occurrences/`, formattedValues);
+      }
       setIsLoading(false);
+      setFiles([]);
       resetForm();
       toast.success('Ocorrência Cadastrada Com Sucesso!');
     } catch (err) {
@@ -327,6 +380,16 @@ export default function CarOccurrence({ initialValues = null }) {
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
+                  </Row>
+                  <Row
+                    className="text-center mt-3"
+                    style={{ background: primaryDarkColor, color: 'white' }}
+                  >
+                    <span className="fs-6">REGISTROS FOTOGRÁFICOS</span>
+                  </Row>
+
+                  <Row>
+                    <PreviewMultipleImages files={files} setFiles={setFiles} />
                   </Row>
 
                   {/* <Button variant="primary" type="submit">

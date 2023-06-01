@@ -80,7 +80,7 @@ export default function Header() {
                 </NavDropdown.Item>
                 <NavDropdown.Item
                   href="#2"
-                  onClick={() => navigate('/collaborator1/ocorrencia/')}
+                  onClick={() => navigate('/collaborator1/ocorrencia')}
                 >
                   Ocorrência
                 </NavDropdown.Item>
@@ -274,14 +274,14 @@ export default function Header() {
                 <NavDropdown.Divider />
                 <NavDropdown.Item
                   href="#28"
-                  onClick={() => navigate('/fleet/ocorrencia')}
+                  onClick={() => navigate('/fleet/ocorrencia/listocorrencia')}
                 >
                   Ocorrência
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item
                   href="#29"
-                  onClick={() => navigate('/fleet/inspection')}
+                  onClick={() => navigate('/fleet/inspection/listinspection')}
                 >
                   Vistoria
                 </NavDropdown.Item>
