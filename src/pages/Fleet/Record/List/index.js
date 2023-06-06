@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { get } from 'lodash';
 import { toast } from 'react-toastify';
 import { FaImages } from 'react-icons/fa';
@@ -72,68 +72,31 @@ export default function Index() {
       {
         Header: 'ID',
         accessor: 'id',
-        width: 50,
+        width: 100,
         disableResizing: true,
         isVisible: window.innerWidth > 768,
-        // Cell: ({ row }) => {
-        //   const getItems = useCallback(
-        //     () =>
-        //       row.original.CarPhoto.map((item) => (
-        //         <a
-        //           key={item.order}
-        //           // data-lg-size={item.size}
-        //           // className="gallery-item"
-        //           href={`${
-        //             appConfig.url
-        //           }/uploads/cars/images/${this.getDataValue('filename')}`}
-        //         >
-        //           <img
-        //             alt={`Imagem ${item.order}`}
-        //             // style={{ maxWidth: '280px' }}
-        //             className="d-none"
-        //             src={`${
-        //               appConfig.url
-        //             }/uploads/cars/images/${this.getDataValue('filename')}`}
-        //             crossOrigin="anonymous"
-        //           />
-        //           {item.order === 1 ? (
-        //             <OverlayTrigger
-        //               placement="left"
-        //               delay={{ show: 250, hide: 400 }}
-        //               overlay={(props) => renderTooltip(props, 'Ver fotos')}
-        //             >
-        //               <Button
-        //                 // size="sm"
-        //                 variant="outline-primary"
-        //                 className="border-0 m-0"
-        //               >
-        //                 <FaImages />
-        //               </Button>
-        //             </OverlayTrigger>
-        //           ) : null}
-        //         </a>
-        //       )),
-        //     []
-        //   );
-        //   return (
-        //     <>
-        //       {[row.original.length] ? (
-        //         <div>
-        //           {' '}
-        //           <Col xs="auto" className="text-center m-0 p-0 pt-1 px-1">
-        //             <LightGallery
-        //               // onInit={onInit}
-        //               speed={500}
-        //               plugins={[lgThumbnail, lgZoom]}
-        //             >
-        //               {getItems()}
-        //             </LightGallery>
-        //           </Col>
-        //         </div>
-        //       ) : null}
-        //     </>
-        //   );
-        // },
+        Cell: ({ row, value }) => {
+          const getItems = useCallback(
+            () => (
+              <Button
+                // size="sm"
+                variant="outline-primary"
+                className="border-0 m-0"
+              >
+                <FaImages />
+              </Button>
+            ),
+            []
+          );
+          return (
+            <>
+              <div className="text-center">{value}</div>
+              <div className="text-center">
+                {row.original.CarPhotos.length > 0 ? getItems() : null}
+              </div>
+            </>
+          );
+        },
         filter: 'includes',
       },
       {
@@ -156,8 +119,7 @@ export default function Index() {
       },
       {
         Header: 'Categoria',
-        accessor: 'CartypeId',
-        filter: 'type',
+        accessor: (originalRow) => originalRow.Cartype?.type,
       },
     ],
     []
@@ -285,7 +247,7 @@ export default function Index() {
                 },
                 {
                   Header: 'Combustível',
-                  accessor: 'CarFueltypeId',
+                  accessor: (originalRow) => originalRow.CarFueltype?.type,
                 },
               ]}
               data={[row.original]}
@@ -297,12 +259,6 @@ export default function Index() {
                 maxWidth: 800,
               }}
               initialState={{
-                // sortBy: [
-                //   {
-                //     id: 'name',
-                //     asc: true,
-                //   },
-                // ],
                 hiddenColumns: [
                   ...columns
                     .filter((col) => col.isVisible === false)
@@ -315,55 +271,48 @@ export default function Index() {
               filterTypes={filterTypes}
               renderRowSubComponent={renderRowSubSubComponent}
             />
+            {row.original.CarPhotos.length ? (
+              <>
+                <br />
+                <Row>
+                  <Col className="text-center">
+                    <span className="text-center fw-bold">IMAGENS</span>
+                  </Col>
+                </Row>
+                <TableNestedrow
+                  style={{ padding: 0, margin: 0 }}
+                  columns={[]}
+                  data={row.original.CarPhotos}
+                  defaultColumn={{
+                    // Let's set up our default Filter UI
+                    // Filter: DefaultColumnFilter,
+                    minWidth: 30,
+                    width: 50,
+                    maxWidth: 800,
+                  }}
+                  initialState={{
+                    sortBy: [
+                      {
+                        id: 'name',
+                        asc: true,
+                      },
+                    ],
+                    hiddenColumns: columns
+                      .filter((col) => col.isVisible === false)
+                      .map((col) => col.accessor),
+                  }}
+                  filterTypes={filterTypes}
+                  renderRowSubComponent={renderRowSubSubComponent}
+                />
+              </>
+            ) : null}
           </Col>
         </Row>
-        {row.original.length ? (
-          <>
-            <br />
-            <Row>
-              <Col className="text-center">
-                <span className="text-center fw-bold">FOTOS</span>
-              </Col>
-            </Row>
-            <TableNestedrow
-              style={{ padding: 0, margin: 0 }}
-              columns={[
-                {
-                  Header: 'Retorno em:',
-                  accessor: 'createdAtBr',
-                  width: 160,
-                  disableResizing: true,
-                },
-                {
-                  Header: 'Valor',
-                  accessor: 'valueBr',
-                  width: 120,
-                  disableResizing: true,
-                },
-              ]}
-              data={[row.original]}
-              defaultColumn={{
-                // Let's set up our default Filter UI
-                // Filter: DefaultColumnFilter,
-                minWidth: 30,
-                width: 50,
-                maxWidth: 800,
-              }}
-              initialState={{
-                sortBy: [
-                  {
-                    id: 'name',
-                    asc: true,
-                  },
-                ],
-                hiddenColumns: columns
-                  .filter((col) => col.isVisible === false)
-                  .map((col) => col.accessor),
-              }}
-              filterTypes={filterTypes}
-            />
-          </>
-        ) : null}
+        <Row>
+          <div>{row.original.CarPhotos.length > 0 ? (
+
+          ) : null}</div>
+        </Row>
       </>
     ),
     []
