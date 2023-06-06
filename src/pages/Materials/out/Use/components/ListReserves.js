@@ -332,12 +332,17 @@ export default function Index({
         accessor: 'userUsername',
         width: 180,
         disableResizing: true,
-        Cell: (props) => {
-          const custom = String(props.value).replace(
+        Cell: ({ value, row }) => {
+          const custom = String(value).replace(
             /(^[a-z]*)\.([a-z]*).*/gm,
             '$1.$2'
           ); // deixar só os dois primeiros nomes
-          return <span> {custom}</span>;
+          return (
+            <>
+              <div> {custom}</div>
+              <div> {row.original.createdAtBr}</div>
+            </>
+          );
         },
         disableSortBy: true,
       },
@@ -462,7 +467,7 @@ export default function Index({
               >
                 <Button
                   size="sm"
-                  variant='outline-primary'
+                  variant="outline-primary"
                   className="border-0 mt-2 d-none"
                   onClick={() => {
                     handleImportReserve(row.original);

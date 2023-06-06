@@ -1,3 +1,4 @@
+/* eslint-disable no-return-assign */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
@@ -10,6 +11,7 @@ import { toast } from 'react-toastify';
 import * as yup from 'yup'; // RulesValidation
 import { Formik, FieldArray } from 'formik'; // FormValidation
 import Select from 'react-select';
+import { update } from 'lodash';
 import axios from '../../../../services/axios';
 import {
   primaryDarkColor,
@@ -17,6 +19,25 @@ import {
   body2Color,
 } from '../../../../config/colors';
 import Loading from '../../../../components/Loading';
+
+const convertEmptyToNull = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj.map((value) => convertEmptyToNull(value));
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => {
+        if (Array.isArray(value) && value.length === 0) {
+          return [key, value];
+        }
+        return [key, convertEmptyToNull(value) ?? null];
+      })
+    );
+  }
+
+  return obj ?? null;
+};
 
 const filterOptions = (row, filterValue) => {
   const arrayFilter = String(filterValue).split(' ');
@@ -37,44 +58,39 @@ const formatGroupLabel = (data) => (
   </Col>
 );
 
-export default function Index() {
+const emptyValues = {
+  ContractId: '',
+  UnidadeId: '',
+  date: '',
+  obs: '',
+  WorkerManualfrequencyItems: [],
+};
+
+export default function Index({ id = null }) {
   const userId = useSelector((state) => state.auth.user.id);
-  const [data, setData] = useState([]);
+  const [initialData, setInitialData] = useState(emptyValues);
   const [workers, setWorkers] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [unidades, setUnidades] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [files, setFiles] = useState([]);
+  const isEditMode = useRef(!!id);
 
   const handlePushItem = (push, row, list) => {
     // não incluir repetido na lista
     // console.log(row);
     // console.log(list);
-    if (list.length > 0) {
-      let exists = false;
-
-      list.every((item) => {
-        if (item.WorkerId === row.value.id) {
-          exists = true;
-          return false;
-        }
-        return true;
-      });
-
-      if (exists) {
-        toast.error('Item já incluído na lista de saída');
-        return;
-      }
-    }
+    const dateBR = String(list.date.split('-').reverse().join('/'));
+    console.log(dateBR);
+    const isFriday = new Date(`${list.date}T00:00`).getDay() === 5;
 
     // adicionar na lista de saída
     push({
       WorkerId: row.value.id,
       name: row.label,
       job: row.value.job,
-      WorkerManualfrequencytypeId: 2,
-      hours: 9,
+      WorkerManualfrequencytypeId: 1,
+      hours: isFriday ? 8 : 9,
       obs: '',
     });
   };
@@ -99,6 +115,61 @@ export default function Index() {
       .required()
       .min(1, 'A lista de colaboradores não pode ser vazia'),
   });
+
+  async function getEditData(idEdit) {
+    const workersOp = [];
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/workers/actives');
+      const response1 = await axios.get(`/workersmanualfrequencies/${idEdit}`);
+
+      // ajustes
+      response1.data?.WorkerManualfrequencyItems?.forEach((item) => {
+        item.name = item.Worker.name;
+        item.job = item.Worker.WorkerContracts[0].WorkerJobtype.job;
+      });
+
+      const myDate = response1.data?.date.split('-');
+      const dateFormated = new Date(
+        myDate[0],
+        Number(myDate[1]) - 1,
+        myDate[2]
+      );
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      };
+      response1.data.dateBR = dateFormated.toLocaleDateString('pt-BR', options);
+
+      setInitialData(response1.data);
+
+      const workersJobs = response.data
+        .filter(
+          (value, index, arr) =>
+            arr.findIndex((item) => item.job === value.job) === index
+        )
+        .map((value) => value.job); // RETORNA OS DIFERENTES TRABALHOS
+
+      workersJobs.forEach((value) => {
+        workersOp.push([
+          value,
+          response.data.filter((item) => item.job === value),
+        ]);
+      });
+
+      setWorkers(workersOp);
+
+      setIsLoading(false);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     async function getData() {
@@ -154,91 +225,100 @@ export default function Index() {
       }
     }
 
-    getData();
-  }, []);
-
-  const toFormData = ((f) => f(f))((h) => (f) => f((x) => h(h)(f)(x)))(
-    (f) => (fd) => (pk) => (d) => {
-      if (d instanceof Object) {
-        Object.keys(d).forEach((k) => {
-          const v = d[k];
-          if (pk) k = `${pk}[${k}]`;
-          if (
-            v instanceof Object &&
-            !(v instanceof Date) &&
-            !(v instanceof File)
-          ) {
-            return f(fd)(k)(v);
-          }
-          fd.append(k, v);
-        });
-      }
-      return fd;
+    if (isEditMode.current) {
+      getEditData(id);
+    } else {
+      getData();
     }
-  )(new FormData())();
+  }, []);
 
   const handleStore = async (values, resetForm) => {
     const formattedValues = {
-      ...Object.fromEntries(
-        Object.entries(values).filter(([_, v]) => v != null)
-      ),
-    }; // LIMPANDO CHAVES NULL E UNDEFINED
+      ...convertEmptyToNull(values),
+    };
 
-    Object.keys(formattedValues).forEach((key) => {
-      if (formattedValues[key] === '') {
-        delete formattedValues[key];
-      }
-    }); // LIMPANDO CHAVES `EMPTY STRINGS`
+    let addList;
+    let deleteList;
+    let updateList;
 
-    formattedValues.materialOuttypeId = 3; // SAÍDA POR DEVOLUÇÃO
-    formattedValues.userId = userId;
-    formattedValues.ContractId = formattedValues.ContractId?.value;
-    formattedValues.workerId = formattedValues.workerId?.value;
-    formattedValues.WorkerManualfrequencyItems.forEach((item) => {
-      Object.assign(item, { MaterialId: item.WorkerId }); // rename key
-    });
+    formattedValues.UserId = userId;
 
-    formattedValues.value = formattedValues.WorkerManualfrequencyItems.reduce(
-      (ac, item) => {
-        ac += Number(item.hours) * Number(item.value);
-        return ac;
-      },
-      0
-    );
+    if (isEditMode.current) {
+      addList = [
+        ...formattedValues.WorkerManualfrequencyItems.filter(
+          (item) =>
+            !initialData.WorkerManualfrequencyItems.some(
+              (initialItem) => initialItem.WorkerId === item.WorkerId
+            )
+        ),
+      ];
 
-    let formData;
-    if (files.length > 0) {
-      formData = toFormData(formattedValues);
-      // eslint-disable-next-line no-restricted-syntax
-      for (const file of files) {
-        formData.append('documents', file.file);
-      }
+      addList.forEach(
+        (item) => (item.WorkerManualfrequencyId = initialData.id)
+      );
+
+      deleteList = [
+        ...initialData.WorkerManualfrequencyItems.filter(
+          (initialItem) =>
+            !formattedValues.WorkerManualfrequencyItems.some(
+              (item) => initialItem.WorkerId === item.WorkerId
+            )
+        ),
+      ];
+
+      deleteList.forEach(
+        (item) => (item.WorkerManualfrequencyId = initialData.id)
+      );
+
+      updateList = [
+        ...initialData.WorkerManualfrequencyItems.filter((initialItem) =>
+          formattedValues.WorkerManualfrequencyItems.some(
+            (item) => initialItem.WorkerId === item.WorkerId
+          )
+        ),
+      ];
+
+      updateList.forEach(
+        (item) => (item.WorkerManualfrequencyId = initialData.id)
+      );
     }
 
     try {
       setIsLoading(true);
 
-      if (files.length > 0) {
-        // await axios.post(`/workers/manualfrequency`, formData, {
-        //   headers: {
-        //     'Content-Type': 'multipart/form-data',
-        //   },
-        // });
-        // for (const pair of formData.entries()) {
-        //   console.log(`${pair[0]} - ${pair[1]}`);
-        // }
+      if (isEditMode.current) {
+        // DELETE DATA
+        console.log(deleteList);
+        if (deleteList.length > 0)
+          await axios.delete(`/workersmanualfrequencies/items`, {
+            data: deleteList,
+          });
+
+        // ADD AND UPDATE DATA
+        const AddANDUpdateList = [...addList, ...updateList];
+        console.log(AddANDUpdateList);
+        if (AddANDUpdateList.length > 0)
+          await axios.post(`/workersmanualfrequencies/items`, AddANDUpdateList);
+
+        // NOW, UPDATE INITIAL DATA FOR UPDATED DATA (IF NECESSARY NEW CHANGES)
+        getEditData(id);
+        toast.success(`Registros alterados com sucesso!`);
       } else {
-        console.log(formattedValues);
-        // await axios.post(`/workers/manualfrequency`, formattedValues);
+        const { data } = await axios.post(
+          `/workersmanualfrequencies`,
+          formattedValues
+        );
+
+        // getEditData(data.id);
+
+        // isEditMode.current = true;
+
+        resetForm();
+
+        toast.success(`Registro realizado com sucesso!`);
       }
 
       setIsLoading(false);
-      setFiles([]);
-      resetForm();
-
-      toast.success(
-        `Registro de frequência em desenolvimento, em breve estará disponível!`
-      );
     } catch (err) {
       // eslint-disable-next-line no-unused-expressions
       console.log(err);
@@ -250,13 +330,6 @@ export default function Index() {
     }
   };
 
-  const initialValues = {
-    ContractId: '',
-    UnidadeId: '',
-    date: '',
-    obs: '',
-    WorkerManualfrequencyItems: [],
-  };
   return (
     <>
       <Loading isLoading={isLoading} />
@@ -267,16 +340,19 @@ export default function Index() {
             className=" text-center"
             style={{ background: primaryDarkColor, color: 'white' }}
           >
-            <span className="fs-5">REGISTRO DE FREQUÊNCIA: MANUAL</span>
+            <span className="fs-5">
+              REGISTRO DE OCORRÊNCIA DE PONTO: MANUAL
+            </span>
           </Col>
         </Row>
         <Row className="px-0 pt-2">
           <Formik // FORAM DEFINIFOS 2 FORMULÁRIOS POIS O SEGUNDO SÓ VAI APARECER AOÓS A INSERÇÃO DO PRIMEIRO
-            initialValues={initialValues}
+            initialValues={initialData}
             validationSchema={schema}
             onSubmit={(values, { resetForm }) => {
               handleStore(values, resetForm);
             }}
+            enableReinitialize
           >
             {({
               submitForm,
@@ -299,26 +375,30 @@ export default function Index() {
                     className="pb-3"
                   >
                     <Form.Label>CONTRATO:</Form.Label>
-                    <Select
-                      inputId="ContractId"
-                      options={contracts.map((contract) => ({
-                        value: contract.id,
-                        label: `${contract.codigoSipac} - ${contract.objeto} `,
-                      }))}
-                      value={
-                        values.ContractId
-                          ? unidades.find(
-                              (option) => option.value === values.ContractId
-                            )
-                          : null
-                      }
-                      onChange={(selected) => {
-                        setFieldValue('ContractId', selected.value);
-                      }}
-                      placeholder="Selecione o contrato"
-                      onBlur={handleBlur}
-                      isDisabled={values.WorkerManualfrequencyItems.length}
-                    />
+                    {isEditMode.current ? (
+                      <p className="fw-bold">{`${initialData?.Contract?.codigoSipac}`}</p>
+                    ) : (
+                      <Select
+                        inputId="ContractId"
+                        options={contracts.map((contract) => ({
+                          value: contract.id,
+                          label: `${contract.codigoSipac} - ${contract.objeto} `,
+                        }))}
+                        value={
+                          values.ContractId
+                            ? unidades.find(
+                                (option) => option.value === values.ContractId
+                              )
+                            : null
+                        }
+                        onChange={(selected) => {
+                          setFieldValue('ContractId', selected.value);
+                        }}
+                        placeholder="Selecione o contrato"
+                        onBlur={handleBlur}
+                        isDisabled={values.WorkerManualfrequencyItems?.length}
+                      />
+                    )}
                     {touched.ContractId && !!errors.ContractId ? (
                       <Badge bg="danger">{errors.ContractId}</Badge>
                     ) : null}
@@ -331,32 +411,36 @@ export default function Index() {
                     className="pb-3"
                   >
                     <Form.Label>UNIDADE:</Form.Label>
-                    <Select
-                      inputId="UnidadeId"
-                      options={unidades.map((unidade) => ({
-                        value: unidade.id,
-                        label: `${unidade.id} - ${unidade.nomeUnidade} `,
-                      }))}
-                      value={
-                        values.UnidadeId
-                          ? unidades.find(
-                              (option) => option.value === values.UnidadeId
-                            )
-                          : null
-                      }
-                      onChange={(selected) => {
-                        setFieldValue('UnidadeId', selected.value);
-                        setFieldValue(
-                          'date',
-                          new Date().toISOString().split('T')[0]
-                        );
-                      }}
-                      placeholder="Selecione a unidade"
-                      onBlur={(e) => {
-                        handleBlur(e);
-                      }}
-                      isDisabled={values.WorkerManualfrequencyItems.length}
-                    />
+                    {isEditMode.current ? (
+                      <p className="fw-bold">{`${initialData?.Unidade?.id} - ${initialData?.Unidade?.sigla}`}</p>
+                    ) : (
+                      <Select
+                        inputId="UnidadeId"
+                        options={unidades.map((unidade) => ({
+                          value: unidade.id,
+                          label: `${unidade.id} - ${unidade.nomeUnidade} `,
+                        }))}
+                        value={
+                          values.UnidadeId
+                            ? unidades.find(
+                                (option) => option.value === values.UnidadeId
+                              )
+                            : null
+                        }
+                        onChange={(selected) => {
+                          setFieldValue('UnidadeId', selected.value);
+                          setFieldValue(
+                            'date',
+                            new Date().toISOString().split('T')[0]
+                          );
+                        }}
+                        placeholder="Selecione a unidade"
+                        onBlur={(e) => {
+                          handleBlur(e);
+                        }}
+                        isDisabled={values.WorkerManualfrequencyItems?.length}
+                      />
+                    )}
                     {touched.UnidadeId && !!errors.UnidadeId ? (
                       <Badge bg="danger">{errors.UnidadeId}</Badge>
                     ) : null}
@@ -369,15 +453,21 @@ export default function Index() {
                     controlId="date"
                   >
                     <Form.Label>DATA:</Form.Label>
-                    <Form.Control
-                      type="date"
-                      value={values.date}
-                      onChange={handleChange}
-                      isInvalid={touched.date && !!errors.date}
-                      // isValid={touched.date && !errors.date}
-                      onBlur={handleBlur}
-                      placeholder="Selecione a data"
-                    />
+                    {isEditMode.current ? (
+                      <p className="fw-bold">{initialData?.dateBR}</p>
+                    ) : (
+                      <Form.Control
+                        type="date"
+                        value={values.date}
+                        onChange={handleChange}
+                        isInvalid={touched.date && !!errors.date}
+                        // isValid={touched.date && !errors.date}
+                        onBlur={handleBlur}
+                        placeholder="Selecione a data"
+                        disabled={isEditMode.current}
+                      />
+                    )}
+
                     <Form.Control.Feedback
                       tooltip
                       type="invalid"
@@ -403,6 +493,7 @@ export default function Index() {
                         setFieldValue('obs', e.target.value.toUpperCase()); // UPPERCASE
                         handleBlur(e);
                       }}
+                      readOnly={isEditMode.current}
                     />
                     <Form.Control.Feedback
                       tooltip
@@ -460,13 +551,7 @@ export default function Index() {
                               formatGroupLabel={formatGroupLabel}
                               value={null}
                               onChange={(selected, action) => {
-                                console.log(selected);
-                                console.log(values.WorkerManualfrequencyItems);
-                                handlePushItem(
-                                  push,
-                                  selected,
-                                  values.WorkerManualfrequencyItems
-                                );
+                                handlePushItem(push, selected, values);
                                 setFieldValue('searchWorker', '');
                               }}
                               placeholder="Selecione o profissional"
@@ -477,8 +562,8 @@ export default function Index() {
                           </Col>
                         </Row>
                         <Row style={{ background: body2Color }}>
-                          {values.WorkerManualfrequencyItems.length > 0 &&
-                            values.WorkerManualfrequencyItems.map(
+                          {values.WorkerManualfrequencyItems?.length > 0 &&
+                            values.WorkerManualfrequencyItems?.map(
                               (item, index) => (
                                 <>
                                   <Row className="d-block d-lg-none">
@@ -563,9 +648,11 @@ export default function Index() {
                                         className="p-0 m-0 ps-2 pe-3 border-0"
                                         style={{ width: '130px' }}
                                       >
-                                        <option value="1">PRESENÇA</option>
-                                        <option value="2">FALTA</option>
-                                        <option value="3">ABONO</option>
+                                        <option value="1">FALTA</option>
+                                        <option value="2">FALTA ABONADA</option>
+                                        <option value="3">PRESENTE</option>
+                                        <option value="4">CAMPO</option>
+                                        <option value="5">SUBSTITUTO</option>
                                       </Form.Select>
                                     </Form.Group>
 
@@ -685,20 +772,23 @@ export default function Index() {
                 <hr />
 
                 <Row className="justify-content-center">
-                  <Col xs="auto" className="text-center pt-2 pb-4">
-                    <Button
-                      type="reset"
-                      variant="warning"
-                      onClick={() => {
-                        resetForm();
-                      }}
-                    >
-                      Limpar
-                    </Button>
-                  </Col>
+                  {isEditMode.current ? null : (
+                    <Col xs="auto" className="text-center pt-2 pb-4">
+                      <Button
+                        type="reset"
+                        variant="warning"
+                        onClick={() => {
+                          resetForm();
+                        }}
+                      >
+                        Limpar
+                      </Button>
+                    </Col>
+                  )}
+
                   <Col xs="auto" className="text-center pt-2 pb-4">
                     <Button variant="success" onClick={submitForm}>
-                      Confirmar frequência
+                      {isEditMode.current ? 'Alterar' : 'Registrar'}
                     </Button>
                   </Col>
                 </Row>

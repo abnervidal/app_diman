@@ -5,7 +5,7 @@ import usersRoletypes from '../../assets/JSON/data/usersRoletypes.json';
 
 import Edificio from './Edificio';
 import List from './Edificio/List';
-import Add from './Edificio/Add';
+import Subdivision from './Edificio/Subdivision';
 
 const roles = usersRoletypes.reduce(
   (acc, cur) => ({ ...acc, [cur.role]: cur.id }),
@@ -17,7 +17,7 @@ export default function InfraRoutes() {
     <Routes>
       <Route path="Edificio" element={<Edificio />}>
         <Route path="list" element={<List />} />{' '}
-        <Route path="add" element={<Add />} />{' '}
+        <Route path="Subdivision" element={<Subdivision />} />{' '}
       </Route>
     </Routes>
   );

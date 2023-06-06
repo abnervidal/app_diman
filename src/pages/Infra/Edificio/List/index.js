@@ -10,6 +10,7 @@ import {
   FaSearch,
   FaSearchPlus,
   FaSearchMinus,
+  FaEllipsisH,
 } from 'react-icons/fa';
 
 import {
@@ -18,22 +19,24 @@ import {
   Card,
   Col,
   Button,
+  ButtonGroup,
   OverlayTrigger,
   Tooltip,
   Badge,
   Image,
-  Dropdown,
   Form,
+  Dropdown,
+  DropdownButton,
 } from 'react-bootstrap';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
+import ModalEdit from './components/ModalEdit';
+
 // import generic table from material's components with global filter and nested row
 import TableGfilterNestedRowHiddenRows from '../../../Materials/components/TableGfilterNestedRowHiddenRows';
 import TableNestedrow from '../../../Materials/components/TableNestedRow';
-
-import ModalEdit from './components/ModalEdit';
 
 // trigger to custom filter
 function DefaultColumnFilter() {
@@ -184,6 +187,7 @@ export default function Index() {
   const [buildings, setBuildings] = useState([]);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [dataEdit, setDataEdit] = useState({});
+  const [modalName, setModalName] = useState();
 
   async function getWorkers() {
     try {
@@ -211,9 +215,10 @@ export default function Index() {
     getWorkers();
   };
 
-  const handleShowModalEdit = (item) => {
+  const handleShowModalEdit = (item, modalName) => {
     setDataEdit(item);
     setShowModalEdit(true);
+    setModalName(modalName);
   };
 
   useEffect(() => {
@@ -294,6 +299,66 @@ export default function Index() {
         filter: 'text',
         isVisible: window.innerWidth > 768,
         Cell: ({ value }) => <div className="text-start">{value}</div>,
+      },
+      {
+        Header: 'Zona',
+        accessor: 'zone',
+        disableSortBy: true,
+        width: 80,
+        disableResizing: true,
+        Filter: InputColumnFilter,
+        filter: 'text',
+        isVisible: window.innerWidth > 768,
+        Cell: ({ value }) => <div className="text-start">{value}</div>,
+      },
+      {
+        // Make an action cell
+        Header: '', // No header
+        id: 'actions', // It needs an ID
+        width: 36,
+        disableResizing: true,
+        Cell: ({ row }) => (
+          <Row className="d-flex flex-nowrap">
+            <Col xs="auto" className="text-center">
+              <OverlayTrigger
+                placement="right"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => renderTooltip(props, 'Opções')}
+              >
+                <DropdownButton
+                  as={ButtonGroup}
+                  // key={direction}
+                  id="dropdown-button-drop-end"
+                  drop="down"
+                  variant="outline-primary"
+                  title=""
+                  size="sm"
+                  style={{ border: 0 }}
+                >
+                  <Dropdown.Item eventKey="1">Editar instalação</Dropdown.Item>
+                  <Dropdown.Item
+                    eventKey="2"
+                    onClick={(e) =>
+                      handleShowModalEdit(row.original, 'Subdivision')
+                    }
+                  >
+                    Subdivisões
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    eventKey="3"
+                    onClick={(e) =>
+                      handleShowModalEdit(row.original, 'Geolocation')
+                    }
+                  >
+                    Definir localização
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item eventKey="4">Separated link</Dropdown.Item>
+                </DropdownButton>
+              </OverlayTrigger>
+            </Col>
+          </Row>
+        ),
       },
       // {
       //   Header: 'Idade',
@@ -835,6 +900,7 @@ export default function Index() {
           handleSaveModal={handleSaveModal}
           show={showModalEdit}
           data={dataEdit}
+          modalName={modalName}
         />
         <Row className="text-center py-3">
           <Card.Title>Instalações Físicas da UFRN</Card.Title>

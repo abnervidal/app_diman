@@ -76,7 +76,7 @@ export default function Header() {
                   href="#1"
                   onClick={() => navigate('/collaborator/frequency/manual')}
                 >
-                  Frequência
+                  Registro de ponto
                 </NavDropdown.Item>
                 <NavDropdown.Item
                   href="#2"

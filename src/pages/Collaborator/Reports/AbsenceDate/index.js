@@ -1,9 +1,12 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Formik } from 'formik'; // FormValidation
+import * as yup from 'yup'; // RulesValidation
 import { toast } from 'react-toastify';
+import Select from 'react-select';
 
 import {
   FaPencilAlt,
@@ -35,7 +38,57 @@ import TableNestedrow from '../../../Materials/components/TableNestedRow';
 
 import ModalEdit from './components/ModalEdit';
 
-import hideCPF from '../../../../assets/script/hideCPF';
+const schema = yup.object().shape({
+  startDate: yup
+    .date()
+    .max(
+      new Date().toISOString().split('T')[0],
+      'Escolha uma data passada para a data de início'
+    ),
+  // endDate: yup
+  //   .date()
+  //   .max(
+  //     new Date().toISOString().split('T')[0],
+  //     'Escolha uma data passada para a data final'
+  //   ),
+});
+
+// Get the current date
+const currentDate = new Date();
+
+// Get the first day of the current month
+const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+// Get the last day of the current month
+const lastDay = new Date(
+  currentDate.getFullYear(),
+  currentDate.getMonth() + 1,
+  0
+);
+
+const initialValues = {
+  startDate: firstDay.toISOString().split('T')[0],
+  endDate: lastDay.toISOString().split('T')[0],
+};
+
+const formatGroupLabel = (data) => (
+  <Col className="d-flex justify-content-between">
+    <span>{data.label}</span>
+    <Badge bg="secondary">{data.options.length}</Badge>
+  </Col>
+);
+
+const filterOptions = (row, filterValue) => {
+  const arrayFilter = String(filterValue).split(' ');
+
+  return arrayFilter.reduce((res, cur) => {
+    // res -> response; cur -> currency (atual)
+    res =
+      res &&
+      String(row.label).toLowerCase().includes(String(cur).toLowerCase());
+    return res;
+  }, true);
+};
 
 // trigger to custom filter
 function DefaultColumnFilter() {
@@ -183,24 +236,10 @@ const renderTooltipImage = (props, message, src) => (
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
-  const [workersFormated, setWorkersFormated] = useState([]);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [dataEdit, setDataEdit] = useState({});
-
-  async function getWorkers() {
-    try {
-      setIsLoading(true);
-      const response = await axios.get(`/workers/actives`);
-      setWorkersFormated(response.data);
-      setIsLoading(false);
-    } catch (err) {
-      // eslint-disable-next-line no-unused-expressions
-      err.response?.data?.errors
-        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
-        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
-      setIsLoading(false);
-    }
-  }
+  const [manualFrequencies, setManualFrequencies] = useState([]);
+  const inputRef = useRef();
 
   // cancel modal -> don't update data
   const handleCancelModal = () => {
@@ -210,17 +249,12 @@ export default function Index() {
   // close modal -> update data
   const handleSaveModal = () => {
     setShowModalEdit(false);
-    getWorkers();
   };
 
-  const handleShowModalEdit = (item) => {
-    setDataEdit(item);
+  const handleShowModalEdit = (id) => {
+    setDataEdit(id);
     setShowModalEdit(true);
   };
-
-  useEffect(() => {
-    getWorkers();
-  }, []);
 
   const columns = React.useMemo(
     () => [
@@ -246,13 +280,122 @@ export default function Index() {
       },
 
       {
-        Header: ({ value, row }) => <div className="text-start">Nome</div>,
-        accessor: 'name',
+        Header: `ID`,
+        accessor: 'id',
+        disableSortBy: true,
+        isVisible: false,
+      },
+      {
+        Header: `Contrato`,
+        accessor: (originalRow) => originalRow.Contract.codigoSipac,
+        width: 150,
+        disableResizing: true,
+        disableSortBy: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
+        isVisible: window.innerWidth > 768,
+      },
+      {
+        Header: `Unidade`,
+        accessor: (originalRow) =>
+          `${originalRow.Unidade.id} - ${originalRow.Unidade.sigla}`,
+        width: 250,
+        disableResizing: true,
+        disableSortBy: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
+        isVisible: window.innerWidth > 768,
+      },
+      {
+        Header: `date`,
+        accessor: 'date',
+        disableSortBy: true,
+        isVisible: false,
+      },
+      {
+        Header: 'Data',
+        id: 'data',
+        width: 350,
+        disableResizing: true,
+        disableSortBy: true,
+        accessor: (originalRow) => {
+          const myDate = originalRow.date.split('-');
+          const dateFormated = new Date(
+            myDate[0],
+            Number(myDate[1]) - 1,
+            myDate[2]
+          );
+          const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          };
+          const dateString = dateFormated.toLocaleDateString('pt-BR', options);
+          return dateString;
+        },
+        isVisible: window.innerWidth > 768,
+      },
+      {
+        Header: `Obs`,
+        accessor: 'obs',
+        disableSortBy: true,
+      },
+      {
+        Header: `Usuário`,
+        accessor: (originalRow) => originalRow.User.username,
+        width: 200,
+        disableResizing: true,
+        disableSortBy: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
+        isVisible: window.innerWidth > 768,
+      },
+      {
+        Header: () => <div className="p-auto text-center">Editar</div>,
+        id: 'edit',
+        width: 70,
+        disableResizing: true,
+        // eslint-disable-next-line react/no-unstable-nested-components
+        Cell: ({ value, row }) => (
+          <Row className="d-flex flex-nowrap">
+            <Col xs="12" className="text-center m-0 p-0 px-2 ps-2">
+              <OverlayTrigger
+                placement="left"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => renderTooltip(props, `Editar registro`)}
+              >
+                <Button
+                  size="sm"
+                  variant="outline-primary"
+                  className="border-0 m-0"
+                  onClick={(e) => handleShowModalEdit(row.original.id)}
+                >
+                  <FaPencilAlt />
+                </Button>
+              </OverlayTrigger>
+            </Col>
+          </Row>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Create a function that will render our row sub components
+  const renderRowSubComponent = React.useCallback(({ row }) => {
+    const columns = [
+      {
+        Header: () => <div className="text-start">Nome</div>,
+        id: `name`,
+        accessor: (originalRow) => originalRow.Worker.name,
         // disableSortBy: true,
+        isVisible: window.innerWidth > 768,
         Cell: ({ value, row }) => (
           <OverlayTrigger
             placement="right"
             delay={{ show: 250, hide: 400 }}
+            s
             overlay={(props) =>
               renderTooltipImage(
                 props,
@@ -271,350 +414,31 @@ export default function Index() {
             </Row>
           </OverlayTrigger>
         ),
-        Filter: InputColumnFilter,
-        filter: 'text',
-        isVisible: window.innerWidth > 768,
       },
       {
-        Header: 'Idade',
-        id: 'age',
-        width: 70,
+        Header: `Registro`,
+        id: 'registro',
+        accessor: (originalRow) => originalRow.WorkerManualfrequencytype.type,
+        width: 150,
         disableResizing: true,
-        accessor: (originalRow) =>
-          originalRow.birthdate
-            ? Math.floor(
-                (new Date() - new Date(originalRow.birthdate).getTime()) /
-                  3.15576e10
-              )
-            : null,
-        isVisible: window.innerWidth > 768,
-      },
-      {
-        Header: 'CPF',
-        accessor: 'cpf',
-        width: 130,
-        disableResizing: true,
-        disableSortBy: true,
-        Cell: ({ value }) => {
-          if (!value) return null;
-          const custom = value.replace(
-            /(\d{3})(\d{3})(\d{3})(\d{2})/gm,
-            '$1.$2.$3-$4'
-          ); // deixar só os dois primeiros nomes
-          return <span> {hideCPF(custom)}</span>;
-        },
-        Filter: InputColumnFilter,
-        filter: 'text',
-        isVisible: window.innerWidth > 768,
-      },
-      {
-        Header: 'Contrato',
-        id: 'contract',
-        width: 100,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) => {
-          const index = originalRow.WorkerContracts.length;
-          if (index === 0) return 'INATIVO';
-          if (originalRow.WorkerContracts[index - 1]?.end) return 'DESLIGADO';
-          return originalRow.WorkerContracts[index - 1]?.Contract?.codigoSipac;
-        },
-        Filter: SelectColumnFilter,
-        filter: 'includes',
-        isVisible: window.innerWidth > 768,
-      },
-      {
-        Header: 'Função',
-        id: 'job',
-        width: 200,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) => {
-          const index = originalRow.WorkerContracts.length;
-          if (index === 0) return 'INDEFINIDO';
-          return originalRow.WorkerContracts[index - 1]?.WorkerJobtype?.job;
-        },
+        // disableSortBy: true,
         Filter: SelectColumnFilter,
         filter: 'exactText',
         isVisible: window.innerWidth > 768,
       },
       {
-        Header: 'Regime',
-        id: 'regime',
-        width: 140,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) => {
-          const index = originalRow.WorkerContracts.length;
-          if (index === 0) return '';
-          if (!originalRow.WorkerContracts[index - 1]?.WorkerContractRegime)
-            return '';
-          return originalRow.WorkerContracts[index - 1]?.WorkerContractRegime
-            .regime;
-        },
-        Filter: SelectColumnFilter,
-        filter: 'exactText',
-        isVisible: window.innerWidth > 768,
-      },
-      // {
-      //   Header: 'Phone',
-      //   accessor: 'phone',
-      //   width: 140,
-      //   disableResizing: true,
-      //   disableSortBy: true,
-      //   Cell: ({ value }) => {
-      //     if (!value) return null;
-      //     const custom = value.replace(
-      //       /(\d{2})(\d{1})(\d{4})(\d{4})/gm,
-      //       '($1) $2.$3-$4'
-      //     ); // deixar só os dois primeiros nomes
-      //     return <span> {custom}</span>;
-      //   },
-      //   Filter: InputColumnFilter,
-      //   filter: 'text',
-      //   isVisible: window.innerWidth > 768,
-      // },
-      {
-        Header: 'Atuação',
-        id: 'acting',
-        width: 200,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) => {
-          const index = originalRow.WorkerContracts.length;
-          if (index === 0) return '';
-          if (!originalRow.WorkerContracts[index - 1]?.acting) return '';
-          return originalRow.WorkerContracts[index - 1]?.acting;
-        },
-        Filter: SelectColumnFilter,
-        filter: 'exactText',
-        isVisible: window.innerWidth > 768,
-      },
-      // {
-      //   Header: 'E-mail',
-      //   accessor: 'email',
-      //   width: 160,
-      //   disableResizing: true,
-      //   disableSortBy: true,
-      //   Filter: InputColumnFilter,
-      //   filter: 'text',
-      //   isVisible: window.innerWidth > 768,
-      // },
-      {
-        Header: 'Unidade',
-        id: 'unit',
-        width: 120,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) => {
-          const index = originalRow.WorkerContracts.length;
-          return `${originalRow.WorkerContracts[index - 1]?.Unidade?.id}-${
-            originalRow.WorkerContracts[index - 1]?.Unidade?.sigla
-          }`;
-        },
-        Filter: SelectColumnFilter,
-        filter: 'includes',
-        isVisible: window.innerWidth > 768,
-      },
-      {
-        Header: ({ value, row }) => (
-          <div className="text-center">Nome - Função - Contrato</div>
-        ),
-        id: 'mobile',
-        width: 100,
-        disableResizing: false,
-        disableSortBy: true,
-        defaultCanFilter: true,
-        isVisible: window.innerWidth < 768,
-        Cell: ({ value, row }) => {
-          const index = row.original.WorkerContracts.length;
-          return (
-            <>
-              <Row>
-                <Col className="d-flex justify-content-center">
-                  <Image
-                    crossOrigin=""
-                    src={row.original.urlPhoto}
-                    alt="Foto de perfil do colaborador"
-                    width="270"
-                    rounded="true"
-                  />
-                </Col>
-              </Row>
-              <Row className="d-flex justify-content-center py-2">
-                <Col xs="11" className="text-center bg-light mx-2">
-                  {row.original.name}
-                </Col>
-              </Row>
-
-              <Row className="d-flex justify-content-center">
-                <Col xs="auto" className="mt-0 pt-0 text-center">
-                  <Badge
-                    className="text-dark bg-light"
-                    style={{
-                      fontSize: '0.8em',
-                    }}
-                  >
-                    {index > 0
-                      ? row.original.WorkerContracts[index - 1]?.WorkerJobtype
-                          ?.job
-                      : 'INDEFINIDO'}
-                  </Badge>
-                </Col>
-                <Col xs="auto" className="mt-0 pt-0">
-                  <Badge
-                    className="text-dark bg-light"
-                    style={{
-                      fontSize: '0.8em',
-                    }}
-                  >
-                    {index === 0
-                      ? 'INATIVO'
-                      : row.original.WorkerContracts[index - 1]?.end
-                      ? 'DESLIGADO'
-                      : row.original.WorkerContracts[index - 1]?.Contract
-                          ?.codigoSipac}
-                  </Badge>
-                </Col>
-              </Row>
-              {/* <Row className="d-flex justify-content-end">
-                <Col xs="auto">
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
-                    className="border-0 m-0"
-                    onClick={(e) => handleShowModalEdit(row.original)}
-                  >
-                    <FaPencilAlt />
-                  </Button>
-                </Col>
-              </Row> */}
-            </>
-          );
-        },
-      },
-      // {
-      //   // Make an expander cell
-      //   Header: () => null, // No header
-      //   id: 'actions', // It needs an ID
-      //   width: 40,
-      //   disableResizing: true,
-      //   Cell: ({ row }) => (
-      //     // Use Cell to render an expander for each row.
-      //     // We can use the getToggleRowExpandedProps prop-getter
-      //     // to build the expander.
-      //     // <Link to={`/collaborator/record/update/${row.original.id}`}>
-      //     <Button
-      //       size="sm"
-      //       variant="outline-secondary"
-      //       className="border-0 m-0"
-      //       onClick={(e) => handleShowModalEdit(row.original)}
-      //     >
-      //       <FaPencilAlt />
-      //     </Button>
-      //     // </Link>
-      //   ),
-      // },
-    ],
-    []
-  );
-
-  // Create a function that will render our row sub components
-  const renderRowSubComponent = React.useCallback(({ row }) => {
-    const columns = [
-      {
-        Header: 'Contrato',
-        id: 'contract',
+        Header: 'Horas',
+        accessor: 'hours',
         width: 125,
         disableResizing: true,
         disableSortBy: true,
-        accessor: (originalRow) => originalRow.Contract?.codigoSipac,
         isVisible: window.innerWidth > 768,
       },
       {
-        Header: 'Função',
-        id: 'job',
-        accessor: (originalRow) => originalRow.WorkerJobtype?.job,
+        Header: 'Observações',
+        accessor: 'obs',
         disableSortBy: true,
         isVisible: window.innerWidth > 768,
-        // eslint-disable-next-line react/destructuring-assignment
-      },
-      {
-        Header: 'Início',
-        id: 'startBr',
-        accessor: (originalRow) => originalRow.startBr,
-        width: 100,
-        disableResizing: true,
-        disableSortBy: true,
-        isVisible: window.innerWidth > 768,
-      },
-      {
-        Header: 'Fim',
-        accessor: 'endBr',
-        width: 100,
-        disableResizing: true,
-        disableSortBy: true,
-        isVisible: window.innerWidth > 768,
-        // eslint-disable-next-line react/destructuring-assignment
-      },
-      {
-        Header: 'Lotado',
-        id: 'unidade',
-        width: 200,
-        disableResizing: true,
-        disableSortBy: true,
-        accessor: (originalRow) =>
-          `${originalRow.Unidade?.id}-${originalRow.Unidade?.sigla}`,
-        isVisible: window.innerWidth > 768,
-        // eslint-disable-next-line react/destructuring-assignment
-      },
-      {
-        Header: ({ value, row }) => (
-          <div className="text-start">Contrato - Função - Inicio - Fim</div>
-        ),
-        id: 'mobile',
-        width: 100,
-        disableResizing: false,
-        disableSortBy: true,
-        defaultCanFilter: true,
-        isVisible: window.innerWidth < 768,
-        Cell: ({ value, row }) => (
-          <Row>
-            <Col xs="auto" className="text-start mb-0 pb-0">
-              {row.original.Contract?.codigoSipac}
-            </Col>
-            <Col xs="auto" className="mt-0 pt-0">
-              <Badge
-                className="text-dark bg-light"
-                style={{
-                  fontSize: '0.8em',
-                }}
-              >
-                {row.original.WorkerJobtype?.job}
-              </Badge>
-            </Col>
-            <Col xs="auto" className="mt-0 pt-0">
-              <Badge
-                className="text-dark bg-success text-white"
-                style={{
-                  fontSize: '0.8em',
-                }}
-              >
-                {row.original.startBr}
-              </Badge>
-            </Col>
-            <Col xs="auto" className="mt-0 pt-0">
-              <Badge
-                className="text-dark bg-danger text-white"
-                style={{
-                  fontSize: '0.8em',
-                }}
-              >
-                {row.original.endBr}
-              </Badge>
-            </Col>
-          </Row>
-        ),
       },
     ];
     return (
@@ -622,7 +446,7 @@ export default function Index() {
         <Row className="mb-2">
           <Col>
             {' '}
-            <Badge>CONTRATOS VINCULADOS AO COLABORADOR</Badge>
+            <Badge>AUSÊNCIAS VINCULADAS À DATA</Badge>
           </Col>
         </Row>
         <Row>
@@ -630,7 +454,7 @@ export default function Index() {
             <TableNestedrow
               style={{ padding: 0, margin: 0 }}
               columns={columns}
-              data={row.original.WorkerContracts}
+              data={row.original.WorkerManualfrequencyItems}
               defaultColumn={{
                 // Let's set up our default Filter UI
                 // Filter: DefaultColumnFilter,
@@ -639,12 +463,12 @@ export default function Index() {
                 maxWidth: 800,
               }}
               initialState={{
-                // sortBy: [
-                //   {
-                //     id: 'name',
-                //     asc: true,
-                //   },
-                // ],
+                sortBy: [
+                  {
+                    id: 'name',
+                    asc: true,
+                  },
+                ],
                 hiddenColumns: [
                   ...columns
                     .filter((col) => col.isVisible === false)
@@ -662,7 +486,7 @@ export default function Index() {
     );
   }, []);
 
-  const data = React.useMemo(() => workersFormated, [workersFormated]);
+  const data = React.useMemo(() => manualFrequencies, [manualFrequencies]);
 
   const defaultColumn = React.useMemo(
     () => ({
@@ -678,8 +502,8 @@ export default function Index() {
   const initialState = {
     sortBy: [
       {
-        id: 'name',
-        asc: true,
+        id: 'date',
+        desc: true,
       },
     ],
     pageSize: 50,
@@ -829,6 +653,44 @@ export default function Index() {
     []
   );
 
+  function objectToQueryString(obj) {
+    const queryString = Object.entries(obj)
+      .map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return value
+            .map(
+              (val) => `${encodeURIComponent(key)}[]=${encodeURIComponent(val)}`
+            )
+            .join('&');
+        }
+        return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+      })
+      .join('&');
+    return queryString;
+  }
+
+  const getItems = async (values) => {
+    try {
+      setIsLoading(true);
+      console.log(values);
+      const queryString = objectToQueryString(values);
+
+      const response = await axios.get(
+        `/workersmanualfrequencies?${queryString}`
+      );
+
+      setManualFrequencies(response.data);
+
+      setIsLoading(false);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <Loading isLoading={isLoading} />
@@ -839,11 +701,79 @@ export default function Index() {
           show={showModalEdit}
           data={dataEdit}
         />
+        <Row>
+          <Formik
+            initialValues={initialValues}
+            validationSchema={schema}
+            onSubmit={(values) => {
+              // getData(values);
+              getItems(values);
+            }}
+          >
+            {({
+              handleSubmit,
+              handleChange,
+              handleBlur,
+              values,
+              touched,
+              errors,
+              setFieldValue,
+            }) => (
+              <Form noValidate autoComplete="off" onSubmit={handleSubmit}>
+                <Row className="align-items-top">
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={2}
+                    controlId="startDate"
+                    className="pb-3"
+                  >
+                    <Form.Label>DATA INÍCIO:</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={values.startDate}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      placeholder="Início"
+                    />
+                    {touched.startDate && !!errors.startDate ? (
+                      <Badge bg="danger">{errors.startDate}</Badge>
+                    ) : null}
+                  </Form.Group>
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={2}
+                    controlId="endDate"
+                    className="pb-3"
+                  >
+                    <Form.Label>DATA FINAL:</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={values.endDate}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      placeholder="Início"
+                    />
+                    {touched.endDate && !!errors.endDate ? (
+                      <Badge bg="danger">{errors.endDate}</Badge>
+                    ) : null}
+                  </Form.Group>
+                  <Col xs="12" sm="auto" lg={1} className="align-self-end pb-3">
+                    <Button type="submit" variant="outline-primary">
+                      <FaSearch />
+                    </Button>
+                  </Col>
+                </Row>
+              </Form>
+            )}
+          </Formik>
+        </Row>
         <Row className="text-center py-3">
-          <Card.Title>Colaboradores com contrato vigente</Card.Title>
+          <Card.Title>Registros de faltas por data</Card.Title>
           <Card.Text>
-            Listagem de todos os colabores que se encontram com contrato ativo e
-            válido.
+            Listagem de todos os registros de falta organizados por contrato,
+            unidade e data.
           </Card.Text>
         </Row>
 

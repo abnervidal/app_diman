@@ -38,9 +38,6 @@ export default function Footer() {
             <div>
               <FaUserCircle /> Mykael Mello
             </div>
-            <div>
-              <FaUserCircle /> Alexandre Cesar
-            </div>
           </Col>
           <Col xs="auto" className="d-flex align-items-center">
             <img

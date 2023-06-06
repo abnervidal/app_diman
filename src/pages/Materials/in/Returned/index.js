@@ -26,6 +26,24 @@ import Loading from '../../../../components/Loading';
 import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
 import TableNestedrow from '../../components/TableNestedRow';
 
+import FilterDate from './components/FilterDate';
+
+function objectToQueryString(obj) {
+  const queryString = Object.entries(obj)
+    .map(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value
+          .map(
+            (val) => `${encodeURIComponent(key)}[]=${encodeURIComponent(val)}`
+          )
+          .join('&');
+      }
+      return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    })
+    .join('&');
+  return queryString;
+}
+
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>
     {message}
@@ -38,10 +56,12 @@ export default function Index() {
   const [showModalReturn, setShowModalReturn] = useState(false);
   const [reqInModal, setReqInModal] = useState('');
 
-  async function getData() {
+  async function getData(values) {
     try {
       setIsLoading(true);
-      const response = await axios.get('/materials/out/');
+      const queryString = objectToQueryString(values);
+
+      const response = await axios.get(`/materials/out?${queryString}`);
       setReqs(response.data);
       setIsLoading(false);
     } catch (err) {
@@ -53,9 +73,9 @@ export default function Index() {
     }
   }
 
-  useEffect(() => {
-    getData();
-  }, []);
+  // useEffect(() => {
+  //   getData();
+  // }, []);
 
   const handleCancelModal = () => {
     setShowModalReturn(false);
@@ -540,6 +560,7 @@ export default function Index() {
         data={reqInModal}
       />
       <Container>
+        <FilterDate getData={getData} />
         <Row className="text-center py-3">
           <Card.Title>Retorno de Materiais</Card.Title>
           <Card.Text>

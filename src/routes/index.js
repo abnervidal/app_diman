@@ -4,7 +4,7 @@ import RequireAuth from './RequireAuth';
 
 import usersRoletypes from '../assets/JSON/data/usersRoletypes.json';
 
-// import PhotoSwipe from '../components/PhotoSwipe';
+import PhotoSwipe from '../components/PhotoSwipe';
 import LightBox from '../components/LightBox';
 import Aluno from '../pages/Aluno';
 import Alunos from '../pages/Alunos';
@@ -27,7 +27,8 @@ import Adm from '../pages/Adm';
 import Fleet from '../pages/Fleet';
 import Unauthorized from '../components/Unauthorized';
 
-import Test from '../pages/Materials/Reports/Output/components/EditModal';
+import Test from '../pages/Infra/Edificio/Geolocation';
+import BigCalendar from '../components/BigCalendar';
 
 // TRANSFORMANDO O ARRAY userRoletypes PARA UM OBJETO ONDE ROLE É A CHAVE E O CÓDIGO É O VALOR
 const roles = usersRoletypes.reduce(
@@ -40,13 +41,14 @@ export default function RoutesPages() {
     <Routes>
       {/* public routes */}
       <Route path="/lightbox" element={<LightBox />} />
-      {/* <Route path="/photoswipe" element={<PhotoSwipe />} /> */}
+      <Route path="/photoswipe" element={<PhotoSwipe />} />
 
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      <Route exact path="/bigcalendar/*" element={<BigCalendar />} />
       <Route exact path="/equip/*" element={<Equip />} />
       <Route exact path="/infra/eletrica/*" element={<Eletrica />} />
       <Route exact path="/infra/agua/*" element={<Agua />} />

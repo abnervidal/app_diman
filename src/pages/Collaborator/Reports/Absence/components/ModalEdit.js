@@ -2,14 +2,11 @@
 /* eslint-disable react/react-in-jsx-scope */
 import React, { useEffect, useContext } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import { primaryDarkColor } from '../../../../../config/colors';
 
-import Subdivision from '../../Subdivision/index';
-
-import Geolocation from '../../Geolocation/index';
+// import EditCollaborator from '../../Add/index';
 
 export default function ModalEdit(props) {
-  const { show, handleSaveModal, handleCancelModal, data, modalName } = props;
+  const { show, handleSaveModal, handleCancelModal, data } = props;
 
   // Manipulando o botão de voltar do navegador para não sair da página de reserva
   useEffect(() => {
@@ -32,40 +29,6 @@ export default function ModalEdit(props) {
     };
   }, []);
 
-  const renderSwitch = (param) => {
-    switch (param) {
-      case 'Subdivision':
-        return (
-          <Subdivision
-            buildingData={data}
-            handleCancelModal={handleCancelModal}
-            handleSaveModal={handleSaveModal}
-          />
-        );
-      case 'Geolocation':
-        return (
-          <Geolocation
-            buildingData={data}
-            handleCancelModal={handleCancelModal}
-            handleSaveModal={handleSaveModal}
-          />
-        );
-      default:
-        return 'foo';
-    }
-  };
-
-  const renderSwitchTitle = (param) => {
-    switch (param) {
-      case 'Subdivision':
-        return 'Subdivisões de Instalações';
-      case 'Geolocation':
-        return 'Localização';
-      default:
-        return 'foo';
-    }
-  };
-
   return (
     <Modal
       show={show}
@@ -74,19 +37,15 @@ export default function ModalEdit(props) {
       keyboard={false}
       size="xl"
     >
-      <Modal.Header
-        style={{ background: primaryDarkColor, color: 'white' }}
-        closeButton
-      >
-        <Modal.Title>{renderSwitchTitle(modalName)}</Modal.Title>
+      <Modal.Header closeButton>
+        <Modal.Title>Edição</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* <Subdivision
-          buildingData={data}
+        {/* <EditCollaborator
+          data={data}
           handleCancelModal={handleCancelModal}
           handleSaveModal={handleSaveModal}
         /> */}
-        {renderSwitch(modalName)}
       </Modal.Body>
       {/* <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>
