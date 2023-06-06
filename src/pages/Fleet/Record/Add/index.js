@@ -7,14 +7,13 @@ import {
   Row,
   Col,
   Button,
-  Badge,
   Form as BootstrapForm,
 } from 'react-bootstrap';
 import Select from 'react-select';
-import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
+// import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-import { IMaskInput } from 'react-imask';
+// import { IMaskInput } from 'react-imask';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
@@ -472,7 +471,7 @@ export default function CarOccurrence({ initialValues = null }) {
                               label: item.type,
                             }))}
                             value={
-                              values.CartypeId
+                              values.CarFueltypeId
                                 ? fuelOptions.find(
                                     (option) =>
                                       option.value === values.CarFueltypeId

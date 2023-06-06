@@ -89,7 +89,7 @@ export default function Index() {
   };
 
   const schema = yup.object().shape({
-    MaterialOutDiscardtypeId: yup.object().required('Requerido'),
+    // MaterialOutDiscardtypeId: yup.object().required('Requerido'),
     obs: yup.string().required('Requerido'),
     place: yup.string().required('Requerido'),
     // eslint-disable-next-line react/forbid-prop-types
@@ -223,8 +223,8 @@ export default function Index() {
     formattedValues.materialOuttypeId = 5; // SAÍDA POR DESCARTE
     formattedValues.userId = userId;
     formattedValues.workerId = formattedValues.workerId?.value;
-    formattedValues.MaterialOutDiscardtypeId =
-      formattedValues.MaterialOutDiscardtypeId?.value;
+    // formattedValues.MaterialOutDiscardtypeId =
+    //   formattedValues.MaterialOutDiscardtypeId?.value;
     formattedValues.MaterialOutItems.forEach((item) => {
       Object.assign(item, { MaterialId: item.materialId }); // rename key
     });
