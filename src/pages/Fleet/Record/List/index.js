@@ -15,15 +15,16 @@ import {
   Image,
 } from 'react-bootstrap';
 
-import lgThumbnail from 'lightgallery/plugins/thumbnail';
-import lgZoom from 'lightgallery/plugins/zoom';
-import LightGallery from 'lightgallery/react';
+// import lgThumbnail from 'lightgallery/plugins/thumbnail';
+// import lgZoom from 'lightgallery/plugins/zoom';
+// import LightGallery from 'lightgallery/react';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
 import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
 import TableNestedrow from '../../components/TableNestedRow';
+import GalleryComponent from '../../../../components/GalleryComponent';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +98,6 @@ export default function Index() {
             </>
           );
         },
-        filter: 'includes',
       },
       {
         Header: 'Apelido',
@@ -148,7 +148,7 @@ export default function Index() {
     hiddenColumns: columns
       .filter((col) => col.isVisible === false)
       .map((col) => col.accessor),
-    pageSize: 20,
+    pageSize: 50,
   };
 
   const filterTypes = React.useMemo(
@@ -259,6 +259,12 @@ export default function Index() {
                 maxWidth: 800,
               }}
               initialState={{
+                sortBy: [
+                  {
+                    id: 'name',
+                    asc: true,
+                  },
+                ],
                 hiddenColumns: [
                   ...columns
                     .filter((col) => col.isVisible === false)
@@ -284,7 +290,7 @@ export default function Index() {
                   columns={[]}
                   data={row.original.CarPhotos}
                   defaultColumn={{
-                    // Let's set up our default Filter UI
+                    // Let's set up our defaul2t Filter UI
                     // Filter: DefaultColumnFilter,
                     minWidth: 30,
                     width: 50,
@@ -306,12 +312,18 @@ export default function Index() {
                 />
               </>
             ) : null}
+            {row.original.CarPhotos.length ? (
+              <GalleryComponent
+                images={row.original.CarPhotos}
+                hasDimensions={false}
+              />
+            ) : null}
           </Col>
         </Row>
         <Row>
-          <div>{row.original.CarPhotos.length > 0 ? (
+          {/* <div>{row.original.CarPhotos.length > 0 ? (
 
-          ) : null}</div>
+          ) : null}</div> */}
         </Row>
       </>
     ),

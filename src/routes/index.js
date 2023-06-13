@@ -38,8 +38,8 @@ export default function RoutesPages() {
   return (
     <Routes>
       {/* public routes */}
-      <Route path="/lightbox" element={<LightBox />} />
-      <Route path="/photoswipe" element={<PhotoSwipe />} />
+      {/* <Route path="/lightbox" element={<LightBox />} />
+      <Route path="/photoswipe" element={<PhotoSwipe />} /> */}
 
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />

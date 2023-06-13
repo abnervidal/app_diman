@@ -1,8 +1,9 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { FaImages } from 'react-icons/fa';
 
-import { Container, Row, Card, Col, Badge } from 'react-bootstrap';
+import { Container, Row, Card, Col, Badge, Button } from 'react-bootstrap';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
@@ -10,6 +11,7 @@ import Loading from '../../../../components/Loading';
 // import generic table from material's components with global filter and nested row
 import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
 import TableNestedrow from '../../components/TableNestedRow';
+import GalleryComponent from '../../../../components/GalleryComponent';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +21,7 @@ export default function Index() {
     async function getData() {
       try {
         setIsLoading(true);
-        const response = await axios.get('/cars/');
+        const response = await axios.get('/cars/inspections/');
         setCars(response.data);
         setIsLoading(false);
       } catch (err) {
@@ -58,31 +60,53 @@ export default function Index() {
       {
         Header: 'ID',
         accessor: 'id',
-        width: 50,
+        width: 100,
         disableResizing: true,
         isVisible: window.innerWidth > 768,
+        Cell: ({ row, value }) => {
+          const getItems = useCallback(
+            () => (
+              <Button
+                // size="sm"
+                variant="outline-primary"
+                className="border-0 m-0"
+              >
+                <FaImages />
+              </Button>
+            ),
+            []
+          );
+          return (
+            <>
+              <div className="text-center">{value}</div>
+              <div className="text-center">
+                {row.original.CarInspectionPhotos.length > 0
+                  ? getItems()
+                  : null}
+              </div>
+            </>
+          );
+        },
       },
       {
         Header: 'Apelido',
-        accessor: 'alias',
-        width: 150,
-        disableResizing: true,
+        accessor: (originalRow) => originalRow.Car?.alias,
       },
       {
         Header: 'Marca',
-        accessor: 'brand',
+        accessor: (originalRow) => originalRow.Car?.brand,
       },
       {
         Header: 'Modelo',
-        accessor: 'model',
+        accessor: (originalRow) => originalRow.Car?.model,
       },
       {
         Header: 'Placa',
-        accessor: 'plate',
+        accessor: (originalRow) => originalRow.Car?.plate,
       },
       {
         Header: 'Categoria',
-        accessor: 'CartypeId',
+        accessor: (originalRow) => originalRow.Car.Cartype?.type,
       },
     ],
     []
@@ -174,11 +198,11 @@ export default function Index() {
         ),
       },
       {
-        Header: 'Motorista',
+        Header: 'Quilometragem',
         accessor: 'milage',
       },
       {
-        Header: 'Tipo de Ocorrência',
+        Header: 'Data da Vistoria',
         accessor: 'date',
       },
     ];
@@ -209,7 +233,7 @@ export default function Index() {
             <TableNestedrow
               style={{ padding: 0, margin: 0 }}
               columns={subColumnsInspections}
-              data={row.original.CarInspections}
+              data={[row.original]}
               defaultColumn={{
                 // Let's set up our default Filter UI
                 // Filter: DefaultColumnFilter,
@@ -243,7 +267,7 @@ export default function Index() {
             <TableNestedrow
               style={{ padding: 0, margin: 0 }}
               columns={subColumnsInternal}
-              data={row.original.CarInspections}
+              data={[row.original]}
               defaultColumn={{
                 // Let's set up our default Filter UI
                 // Filter: DefaultColumnFilter,
@@ -277,7 +301,7 @@ export default function Index() {
             <TableNestedrow
               style={{ padding: 0, margin: 0 }}
               columns={subColumnsExternal}
-              data={row.original.CarInspections}
+              data={[row.original]}
               defaultColumn={{
                 // Let's set up our default Filter UI
                 // Filter: DefaultColumnFilter,
@@ -306,18 +330,18 @@ export default function Index() {
             />
           </Col>
         </Row>
-        {/* <Row className="mb-2">
-          <Col>
-            {' '}
-            <Badge>DEMAIS INFORMAÇÕES SOBRE O VEÍCULO</Badge>
-          </Col>
-        </Row>
-        <Row>
-          <Col>
+        {row.original.CarInspectionPhotos.length ? (
+          <>
+            <br />
+            <Row>
+              <Col className="text-center">
+                <span className="text-center fw-bold">IMAGENS</span>
+              </Col>
+            </Row>
             <TableNestedrow
               style={{ padding: 0, margin: 0 }}
-              columns={subColumnsCars}
-              data={[row.original]}
+              columns={[]}
+              data={row.original.CarInspectionPhotos}
               defaultColumn={{
                 // Let's set up our default Filter UI
                 // Filter: DefaultColumnFilter,
@@ -326,26 +350,27 @@ export default function Index() {
                 maxWidth: 800,
               }}
               initialState={{
-                // sortBy: [
-                //   {
-                //     id: 'name',
-                //     asc: true,
-                //   },
-                // ],
-                hiddenColumns: [
-                  ...columns
-                    .filter((col) => col.isVisible === false)
-                    .map((col) => col.id),
-                  ...columns
-                    .filter((col) => col.isVisible === false)
-                    .map((col) => col.accessor),
+                sortBy: [
+                  {
+                    id: 'name',
+                    asc: true,
+                  },
                 ],
+                hiddenColumns: columns
+                  .filter((col) => col.isVisible === false)
+                  .map((col) => col.accessor),
               }}
               filterTypes={filterTypes}
               renderRowSubComponent={renderRowSubSubComponent}
             />
-          </Col>
-        </Row> */}
+          </>
+        ) : null}
+        {row.original.CarInspectionPhotos.length ? (
+          <GalleryComponent
+            images={row.original.CarInspectionPhotos}
+            hasDimensions={false}
+          />
+        ) : null}
       </>
     );
   }, []);
