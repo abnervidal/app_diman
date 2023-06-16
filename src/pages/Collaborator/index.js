@@ -3,6 +3,9 @@ import { Route, Routes } from 'react-router-dom';
 
 import usersRoletypes from '../../assets/JSON/data/usersRoletypes.json';
 
+import RequireAuth from '../../routes/RequireAuth';
+import Unauthorized from '../../components/Unauthorized';
+
 import Frequency from './Frequency';
 import FacialRecognition from './Frequency/FacialRecognition';
 import FrequencyManual from './Frequency/Manual';
@@ -32,11 +35,6 @@ const roles = usersRoletypes.reduce(
 export default function MaterialsRoutes() {
   return (
     <Routes>
-      <Route path="frequency" element={<Frequency />}>
-        <Route path="facialrecognition" element={<FacialRecognition />} />{' '}
-        <Route path="manual" element={<FrequencyManual />} />{' '}
-      </Route>
-
       <Route path="safety" element={<Safety />}>
         <Route path="risk/add" element={<RiskAdd />} />{' '}
         <Route path="risk/list" element={<RiskList />} />{' '}
@@ -52,10 +50,25 @@ export default function MaterialsRoutes() {
         <Route path="frequency" element={<RegisterFrequency />} />{' '}
       </Route>
 
-      <Route path="record" element={<Record />}>
-        <Route path="list" element={<List />} />{' '}
-        <Route path="add" element={<Add />} />{' '}
-        <Route path="update/:id" element={<Add />} />{' '}
+      <Route path="/Unauthorized" element={<Unauthorized />} />
+      {/* we want to protect these routes */}
+      <Route
+        element={
+          <RequireAuth
+            allowedRoles={[roles.adm, roles.adm_workers, roles.super_workers]}
+          />
+        }
+      >
+        <Route path="frequency" element={<Frequency />}>
+          <Route path="facialrecognition" element={<FacialRecognition />} />{' '}
+          <Route path="manual" element={<FrequencyManual />} />{' '}
+        </Route>
+
+        <Route path="record" element={<Record />}>
+          <Route path="list" element={<List />} />{' '}
+          <Route path="add" element={<Add />} />{' '}
+          <Route path="update/:id" element={<Add />} />{' '}
+        </Route>
       </Route>
     </Routes>
   );

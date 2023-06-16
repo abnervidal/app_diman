@@ -11,6 +11,8 @@ import {
   FaSearchPlus,
   FaSearchMinus,
   FaEllipsisH,
+  FaMapMarkedAlt,
+  FaMapMarkerAlt,
 } from 'react-icons/fa';
 
 import {
@@ -29,6 +31,7 @@ import {
   DropdownButton,
 } from 'react-bootstrap';
 
+import { original } from '@reduxjs/toolkit';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
@@ -188,8 +191,47 @@ export default function Index() {
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [dataEdit, setDataEdit] = useState({});
   const [modalName, setModalName] = useState();
+  const [skipPageReset, setSkipPageReset] = React.useState(false);
 
-  async function getWorkers() {
+  // The forwardRef is important!!
+  // Dropdown needs access to the DOM node in order to position the Menu
+  const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
+    <Button
+      href=""
+      size="sm"
+      variant="outline-primary"
+      className="border-0 m-0"
+      ref={ref}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(e);
+      }}
+    >
+      {children}
+      {/* &#x25bc; */}
+    </Button>
+  ));
+
+  // forwardRef again here!
+  // Dropdown needs access to the DOM of the Menu to measure it
+  const CustomMenu = React.forwardRef(
+    ({ children, style, className, 'aria-labelledby': labeledBy }, ref) => {
+      const [value, setValue] = useState('');
+
+      return (
+        <div
+          ref={ref}
+          style={style}
+          className={className}
+          aria-labelledby={labeledBy}
+        >
+          <ul className="list-unstyled">{React.Children.toArray(children)}</ul>
+        </div>
+      );
+    }
+  );
+
+  async function getBuildings() {
     try {
       setIsLoading(true);
       const response = await axios.get(`/properties/buildings`);
@@ -210,9 +252,11 @@ export default function Index() {
   };
 
   // close modal -> update data
-  const handleSaveModal = () => {
+  const handleSaveModal = (rowIndex, columId, value) => {
     setShowModalEdit(false);
-    getWorkers();
+    // getBuildings();
+    // eslint-disable-next-line no-use-before-define
+    updateMyData(rowIndex, columId, value);
   };
 
   const handleShowModalEdit = (item, modalName) => {
@@ -222,8 +266,65 @@ export default function Index() {
   };
 
   useEffect(() => {
-    getWorkers();
+    getBuildings();
   }, []);
+
+  const handleUpdateDatabase = async (e, values, actualBalance) => {
+    e.preventDefault();
+    const { materialId } = values;
+    const updateInitialQuantity = {
+      // userIdInitialQuantity: userId,
+      dateInitialQuantity: new Date().toISOString(),
+      initialQuantity: Number(actualBalance) - Number(values.balance),
+    };
+
+    try {
+      setIsLoading(true);
+
+      // FAZ A ATUALIZAÇÃO DA SEPARAÇÃO
+      await axios.put(
+        `/materials/inventory/${materialId}`,
+        updateInitialQuantity
+      );
+
+      setIsLoading(false);
+      // getData();
+
+      toast.success(`Saldo inicial atualizado com sucesso`);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+
+      setIsLoading(false);
+    }
+  };
+
+  // When our cell renderer calls updateMyData, we'll use
+  // the rowIndex, columnId and new value to update the
+  // original data
+  const updateMyData = (rowIndex, columnId, value) => {
+    // We also turn on the flag to not reset the page
+    setSkipPageReset(true);
+    setBuildings((old) =>
+      old.map((row, index) => {
+        if (index === rowIndex) {
+          // const date = new Date()
+          //   .toISOString()
+          //   .split('T')[0]
+          //   .replace(/^(\d{4})-(\d{1,2})-(\d{1,2})$/, '$3/$2/$1');
+          // const time = new Date().toISOString().split('T')[1].substring(0, 5);
+          return {
+            ...old[rowIndex],
+            // initialQuantity: Number(value) - Number(old[rowIndex].balance),
+            // dateInitialQuantity: `${date} ${time}`,
+          };
+        }
+        return row;
+      })
+    );
+  };
 
   const columns = React.useMemo(
     () => [
@@ -279,10 +380,23 @@ export default function Index() {
         Cell: ({ value }) => <div className="text-start">{value}</div>,
       },
       {
+        Header: 'Mapa',
+        accessor: 'geo',
+        disableSortBy: true,
+        width: 70,
+        disableResizing: true,
+        Filter: InputColumnFilter,
+        filter: 'text',
+        isVisible: window.innerWidth > 768,
+        Cell: ({ value }) => (
+          <div className="text-center">{value ? <FaMapMarkerAlt /> : null}</div>
+        ),
+      },
+      {
         Header: 'Pvtos',
         accessor: 'floors',
         disableSortBy: true,
-        width: 80,
+        width: 70,
         disableResizing: true,
         Filter: InputColumnFilter,
         filter: 'text',
@@ -293,7 +407,7 @@ export default function Index() {
         Header: 'Área',
         accessor: 'area',
         disableSortBy: true,
-        width: 90,
+        width: 80,
         disableResizing: true,
         Filter: InputColumnFilter,
         filter: 'text',
@@ -304,7 +418,7 @@ export default function Index() {
         Header: 'Zona',
         accessor: 'zone',
         disableSortBy: true,
-        width: 80,
+        width: 70,
         disableResizing: true,
         Filter: InputColumnFilter,
         filter: 'text',
@@ -313,48 +427,65 @@ export default function Index() {
       },
       {
         // Make an action cell
-        Header: '', // No header
+        Header: 'Ações', // No header
         id: 'actions', // It needs an ID
-        width: 36,
+        width: 80,
         disableResizing: true,
         Cell: ({ row }) => (
           <Row className="d-flex flex-nowrap">
-            <Col xs="auto" className="text-center">
+            <Col xs="auto" className="text-center d-flex">
               <OverlayTrigger
-                placement="right"
+                placement="top"
                 delay={{ show: 250, hide: 400 }}
                 overlay={(props) => renderTooltip(props, 'Opções')}
               >
-                <DropdownButton
-                  as={ButtonGroup}
-                  // key={direction}
-                  id="dropdown-button-drop-end"
-                  drop="down"
-                  variant="outline-primary"
-                  title=""
+                <Dropdown>
+                  <Dropdown.Toggle
+                    as={CustomToggle}
+                    id="dropdown-custom-components"
+                  >
+                    <FaEllipsisH />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu as={CustomMenu}>
+                    <Dropdown.Item eventKey="1">
+                      Editar instalação
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      eventKey="2"
+                      onClick={(e) =>
+                        handleShowModalEdit(row.original, 'Subdivision')
+                      }
+                    >
+                      Subdivisões
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      eventKey="3"
+                      onClick={(e) =>
+                        handleShowModalEdit(row.original, 'Geolocation')
+                      }
+                    >
+                      Definir localização
+                    </Dropdown.Item>
+                    <Dropdown.Divider />
+                    <Dropdown.Item eventKey="4">Separated link</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </OverlayTrigger>
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => renderTooltip(props, 'Definir localização')}
+              >
+                <Button
                   size="sm"
-                  style={{ border: 0 }}
+                  variant="outline-danger"
+                  className="border-0 m-0 ms-1"
+                  onClick={(e) =>
+                    handleShowModalEdit(row.original, 'Geolocation')
+                  }
                 >
-                  <Dropdown.Item eventKey="1">Editar instalação</Dropdown.Item>
-                  <Dropdown.Item
-                    eventKey="2"
-                    onClick={(e) =>
-                      handleShowModalEdit(row.original, 'Subdivision')
-                    }
-                  >
-                    Subdivisões
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    eventKey="3"
-                    onClick={(e) =>
-                      handleShowModalEdit(row.original, 'Geolocation')
-                    }
-                  >
-                    Definir localização
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item eventKey="4">Separated link</Dropdown.Item>
-                </DropdownButton>
+                  <FaMapMarkedAlt />
+                </Button>
               </OverlayTrigger>
             </Col>
           </Row>
@@ -917,6 +1048,8 @@ export default function Index() {
           initialState={initialState}
           filterTypes={filterTypes}
           // renderRowSubComponent={renderRowSubComponent}
+          updateMyData={updateMyData}
+          skipPageReset={skipPageReset}
         />
       </Container>
     </>

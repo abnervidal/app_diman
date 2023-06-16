@@ -521,6 +521,7 @@ export default function Index({
     //     desc: true,
     //   },
     // ],
+    pageSize: 50,
     hiddenColumns: columns
       .filter((col) => col.isVisible === false)
       .map((col) => col.accessor),

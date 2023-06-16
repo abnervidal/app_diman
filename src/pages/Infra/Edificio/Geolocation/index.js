@@ -1,5 +1,12 @@
-import React, { useMemo, useRef, useCallback, useState } from 'react';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+/* eslint-disable react/prop-types */
+import React, {
+  useMemo,
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+} from 'react';
+import { GoogleMap, LoadScript, Marker, latLng } from '@react-google-maps/api';
 import {
   Container,
   Row,
@@ -10,7 +17,11 @@ import {
   Tooltip,
   Form as BootstrapForm,
 } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import './style.css';
+
+import axios from '../../../../services/axios';
+import Loading from '../../../../components/Loading';
 
 const containerStyle = {
   width: '800px',
@@ -22,19 +33,26 @@ const onLoadMarker = (marker) => {
 };
 
 function MyComponent({ buildingData }) {
-  const [position, setPosition] = useState({
+  const [isLoading, setIsLoading] = useState(false);
+  const [position, setPosition] = useState();
+  const [center, setCenter] = useState({
     lat: -5.839692696223772,
     lng: -35.20156446349059,
   });
   const mapRef = useRef();
 
-  const center = useMemo(
-    () => ({
-      lat: -5.839692696223772,
-      lng: -35.20156446349059,
-    }),
-    []
-  );
+  useEffect(() => {
+    if (buildingData.geo) {
+      const newPosition = {
+        lat: buildingData.geo.coordinates[0],
+        lng: buildingData.geo.coordinates[1],
+      };
+      console.log(buildingData.geo);
+      setPosition(newPosition);
+      // mapRef.current?.panTo(newPosition);
+      setCenter(newPosition);
+    }
+  }, []);
 
   const options = useMemo(
     () => ({
@@ -51,6 +69,30 @@ function MyComponent({ buildingData }) {
       lng,
     });
     console.log(lat, lng);
+  };
+
+  const handleStore = async (values) => {
+    try {
+      setIsLoading(true);
+
+      const geo = {
+        type: 'Point',
+        coordinates: [values.lat, values.lng],
+      };
+
+      await axios.put(`/properties/buildings/${buildingData.subRip}`, { geo });
+
+      toast.success(`Registro realizado com sucesso!`);
+      setIsLoading(false);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      console.log(err);
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+
+      setIsLoading(false);
+    }
   };
 
   // eslint-disable-next-line no-return-assign
@@ -99,7 +141,7 @@ function MyComponent({ buildingData }) {
         </Row>
       </Container>
       <Container>
-        <Row style={{ height: '70vh' }}>
+        <Row style={{ height: '65vh' }}>
           <LoadScript
             googleMapsApiKey={process.env.REACT_APP_BASE_GOOGLE_API_KEY}
             region="us"
@@ -117,18 +159,31 @@ function MyComponent({ buildingData }) {
               }}
             >
               {/* Child components, such as markers, info windows, etc. */}
-              <Marker
-                onLoad={onLoadMarker}
-                position={position}
-                options={{
-                  label: {
-                    text: 'Posição teste',
-                    className: 'mb-4 pb-3',
-                  },
-                }}
-              />
+              {position ? (
+                <Marker
+                  onLoad={onLoadMarker}
+                  position={position}
+                  options={{
+                    label: {
+                      text: buildingData?.name,
+                      className: 'marker badge bg-info text-white',
+                    },
+                  }}
+                />
+              ) : null}
             </GoogleMap>
           </LoadScript>
+        </Row>
+        <Row className="justify-content-center pt-2 pb-4">
+          <Col xs="auto" className="text-center">
+            <Button
+              variant="success"
+              type="submit"
+              onClick={(e) => handleStore(position)}
+            >
+              Confirmar Localização
+            </Button>
+          </Col>
         </Row>
       </Container>
     </>

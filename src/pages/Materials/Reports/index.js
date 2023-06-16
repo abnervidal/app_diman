@@ -58,6 +58,14 @@ export default function index() {
                 <Nav.Link href="#6">Balanço por Manutenção</Nav.Link>
               </Link>
             </Nav.Item>
+            <Nav.Item>
+              <Link
+                className="text-decoration-none"
+                to="/materials/reports/materialworker"
+              >
+                <Nav.Link href="#7">Material x Colaborador</Nav.Link>
+              </Link>
+            </Nav.Item>
           </Nav>
         </Container>
       </Card.Header>

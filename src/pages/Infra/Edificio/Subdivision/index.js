@@ -383,7 +383,9 @@ function MyForm({ buildingData }) {
       try {
         setIsLoading(true);
 
-        const response = await axios.get('/properties/buildings/sectionstypes');
+        const response = await axios.get(
+          '/properties/buildings/sections/sectionstypes/'
+        );
         setSectionstypes(response.data);
 
         const response1 = await axios.get(
