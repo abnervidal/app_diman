@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { get } from 'lodash';
 import { toast } from 'react-toastify';
-import { FaImages } from 'react-icons/fa';
+import { FaImages, FaSearch, FaPencilAlt } from 'react-icons/fa';
 
 import {
   Container,
@@ -13,6 +13,8 @@ import {
   Button,
   OverlayTrigger,
   Image,
+  Dropdown,
+  Tooltip,
 } from 'react-bootstrap';
 
 // import lgThumbnail from 'lightgallery/plugins/thumbnail';
@@ -22,29 +24,128 @@ import {
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
-import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
+// import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
 import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
+import TableGfilterNestedRowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
+import EditModal from '../../components/EditModal';
+
+const renderTooltip = (props, message) => (
+  <Tooltip id="button-tooltip" {...props}>
+    {message}
+  </Tooltip>
+);
+
+// trigger to custom filter
+function DefaultColumnFilter() {
+  return <> </>;
+} // as colunas padrao nao aplicam filtro
+
+function SelectColumnFilter({
+  column: { filterValue, setFilter, preFilteredRows, id },
+  toggleAllRowsExpanded,
+}) {
+  // Calculate the options for filtering
+  // using the preFilteredRows
+  const options = React.useMemo(() => {
+    const options = new Set();
+    preFilteredRows.forEach((row) => {
+      options.add(row.values[id]);
+    });
+    return [...options.values()];
+  }, [id, preFilteredRows]);
+  // Render a multi-select box
+  return (
+    <Col>
+      <OverlayTrigger
+        placement="left"
+        delay={{ show: 250, hide: 400 }}
+        overlay={(props) => renderTooltip(props, `Filter for ${id}`)}
+      >
+        <Dropdown>
+          <Dropdown.Toggle
+            variant="outline-primary"
+            size="sm"
+            id="dropdown-group"
+            className="border-0"
+            // onClick={() => toggleAllRowsExpanded(true)}
+            onFocus={() => toggleAllRowsExpanded(false)} // tirando a expansao antes de filtrar, evita bugs
+          >
+            {filterValue ? <span>{filterValue}</span> : <FaSearch />}
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                // toggleAllRowsExpanded(false);
+                setFilter('');
+              }}
+            >
+              Remover Filtro
+            </Dropdown.Item>
+            {options.sort().map((option, i) => (
+              <Dropdown.Item
+                key={i}
+                onClick={() => {
+                  setFilter(option || undefined);
+                }}
+              >
+                {option}{' '}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </OverlayTrigger>
+    </Col>
+  );
+}
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [cars, setCars] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [dataModal, setDataModal] = useState('');
+
+  async function getData() {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/cars/');
+      setCars(response.data);
+      setIsLoading(false);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+      setIsLoading(false);
+    }
+  }
+
+  const handleCloseEditModal = () => setShowEditModal(false);
+  const handleSaveEditModal = () => {
+    setShowEditModal(false);
+    getData();
+  };
+  const handleShowEditModal = (data) => {
+    setDataModal(data);
+    setShowEditModal(true);
+  };
 
   useEffect(() => {
-    async function getData() {
-      try {
-        setIsLoading(true);
-        const response = await axios.get('/cars/');
-        setCars(response.data);
-        setIsLoading(false);
-      } catch (err) {
-        // eslint-disable-next-line no-unused-expressions
-        err.response?.data?.errors
-          ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
-          : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
-        setIsLoading(false);
-      }
-    }
+    // async function getData() {
+    //   try {
+    //     setIsLoading(true);
+    //     const response = await axios.get('/cars/');
+    //     setCars(response.data);
+    //     setIsLoading(false);
+    //   } catch (err) {
+    //     // eslint-disable-next-line no-unused-expressions
+    //     err.response?.data?.errors
+    //       ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+    //       : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+    //     setIsLoading(false);
+    //   }
+    // }
 
     getData();
   }, []);
@@ -104,22 +205,104 @@ export default function Index() {
         accessor: 'alias',
         width: 150,
         disableResizing: true,
+        disableSortBy: true,
       },
       {
         Header: 'Marca',
         accessor: 'brand',
+        disableSortBy: true,
+        Filter: SelectColumnFilter,
       },
       {
         Header: 'Modelo',
         accessor: 'model',
+        disableSortBy: true,
       },
       {
         Header: 'Placa',
         accessor: 'plate',
+        disableSortBy: true,
       },
       {
         Header: 'Categoria',
         accessor: (originalRow) => originalRow.Cartype?.type,
+        disableSortBy: true,
+        Filter: SelectColumnFilter,
+      },
+      {
+        Header: '',
+        id: 'actions',
+        width: 50,
+        disableResizing: true,
+        disableSortBy: true,
+        isVisible: window.innerWidth > 768,
+        // eslint-disable-next-line react/no-unstable-nested-components
+        Cell: ({ row }) => (
+          <Row className="d-flex flex-nowrap justify-content-center">
+            <Col xs="auto" className="text-center m-0 p-0 px-1">
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => renderTooltip(props, 'Editar veículo')}
+              >
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  className="border-0 m-0"
+                  onClick={() => handleShowEditModal(row.original)}
+                  hidden={
+                    row.original?.withdrawnAtBr ||
+                    row.original?.separatedAtBr ||
+                    row.original?.canceledAtBr
+                  }
+                >
+                  <FaPencilAlt />
+                </Button>
+              </OverlayTrigger>
+            </Col>
+            {/* <Col xs="auto" className="text-center m-0 p-0 px-1">
+              <>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={(props) => renderTooltip(props, 'Excluir veículo')}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    className="border-0"
+                    onClick={(e) => {
+                      handleCancelAsk(e, row.original);
+                    }}
+                    hidden={
+                      row.original?.withdrawnAtBr ||
+                      row.original?.separatedAtBr ||
+                      row.original?.canceledAtBr
+                    }
+                  >
+                    <FaTimes />
+                  </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={(props) => renderTooltip(props, 'Confirmar ação')}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline-warning"
+                    className="border-0 d-none"
+                    // onClick={() => {
+                    //   handleCancelReserve(row.original);
+                    // }}
+                  >
+                    <FaExclamation />
+                  </Button>
+                </OverlayTrigger>
+              </>
+            </Col> */}
+          </Row>
+        ),
       },
     ],
     []
@@ -130,7 +313,8 @@ export default function Index() {
   const defaultColumn = React.useMemo(
     () => ({
       // Let's set up our default Filter UI
-      // Filter: DefaultColumnFilter,
+      Filter: DefaultColumnFilter,
+      // disableSortBy: true,
       minWidth: 30,
       width: 120,
       maxWidth: 800,
@@ -332,16 +516,20 @@ export default function Index() {
 
   return (
     <>
-      {' '}
-      {console.log(cars)}
       <Loading isLoading={isLoading} />
+      <EditModal // modal p/ pesquisa de materiais
+        handleClose={handleCloseEditModal}
+        show={showEditModal}
+        data={dataModal}
+        handleSave={handleSaveEditModal}
+      />
       <Container>
         <Row className="text-center py-3">
           <Card.Title>Automóveis Cadastrados</Card.Title>
           <Card.Text>Cadastros realizados no sisman.</Card.Text>
         </Row>
 
-        <TableGfilterNestedrow
+        <TableGfilterNestedRowHiddenRows
           columns={columns}
           data={data}
           defaultColumn={defaultColumn}

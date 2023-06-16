@@ -12,21 +12,33 @@ import {
   useExpanded,
   usePagination,
 } from 'react-table';
-import { Form, Table, Row, Col, Button } from 'react-bootstrap';
+import { Form, Table, Row, Col, Button, Badge } from 'react-bootstrap';
 import {
   FaFilter,
   FaSortAlphaDown,
   FaSortAlphaUp,
   FaSort,
 } from 'react-icons/fa';
+import styled from 'styled-components';
+
+const Styles = styled.div`
+  table {
+    table {
+      background-color: #fff;
+    }
+  }
+`;
 
 export function GlobalFilter({
   preGlobalFilteredRows,
   globalFilter,
   setGlobalFilter,
+  globalFilteredRows,
+  toggleAllRowsExpanded,
 }) {
   const inputRef = useRef();
   const count = preGlobalFilteredRows.length;
+  const countFiltered = globalFilteredRows.length;
   const [value, setValue] = React.useState(globalFilter);
   // eslint-disable-next-line no-shadow
   const onChange = useAsyncDebounce((value) => {
@@ -35,15 +47,15 @@ export function GlobalFilter({
 
   return (
     <Form onSubmit={(e) => e.preventDefault()}>
-      <Form.Group
-        as={Row}
-        className="d-flex align-items-center"
-        controlId="searchForm"
-      >
-        <Form.Label column xs="auto" className="pe-0">
-          <FaFilter className="text-dark" />
-        </Form.Label>
-        <Col>
+      <Row>
+        <Form.Group
+          as={Col}
+          className="d-flex align-items-center"
+          controlId="searchForm"
+        >
+          <Form.Label column xs="auto" className="pe-2">
+            <FaFilter className="text-dark" />
+          </Form.Label>
           <Form.Control
             size="sm"
             type="text"
@@ -52,25 +64,79 @@ export function GlobalFilter({
               setValue(e.target.value.toUpperCase());
               onChange(e.target.value);
             }}
-            placeholder={` ${count} registros...`}
+            onFocus={() => toggleAllRowsExpanded(false)} // tirando a expansao antes de filtrar, evita bugs
+            placeholder="Digite aqui sua consulta..."
             className="border-0"
             autoComplete="off"
             autoFocus
             ref={inputRef}
           />
+        </Form.Group>
+      </Row>
+      <Row className="d-flex justify-content-end">
+        <Col sm="auto">
+          <Badge bg="ligth" text="dark" className="mt-1">
+            {countFiltered} registros encontrados de {count}
+          </Badge>
         </Col>
-      </Form.Group>
+      </Row>
     </Form>
   );
 }
 
-export default function TableGfilterNestedrow({
+function SortBy({ column: { isSorted, isSortedDesc, toggleSortBy } }) {
+  return (
+    <Col xs="auto" className="pe-0">
+      <span>
+        {' '}
+        {isSorted ? (
+          isSortedDesc ? (
+            <Button
+              title="Ordenado decrescente"
+              size="sm"
+              variant="outline-primary"
+              className="border-0"
+              onClick={() => toggleSortBy(!isSortedDesc)}
+            >
+              <FaSortAlphaUp />
+            </Button>
+          ) : (
+            <Button
+              title="Ordenado crescente"
+              size="sm"
+              variant="outline-primary"
+              className="border-0 "
+              onClick={() => toggleSortBy(!isSortedDesc)}
+            >
+              <FaSortAlphaDown />
+            </Button>
+          )
+        ) : (
+          <Button
+            title="Clique para ordenar"
+            size="sm"
+            variant="outline-primary"
+            className="border-0 "
+            onClick={() => toggleSortBy(false)}
+          >
+            <FaSort />
+          </Button>
+        )}
+      </span>
+    </Col>
+  );
+}
+
+export default function TableGfilterNestedRowHiddenRows({
   columns,
   data,
   defaultColumn,
   filterTypes,
   initialState,
   renderRowSubComponent,
+  updateMyData,
+  updateMyDataDatabase,
+  skipPageReset,
 }) {
   const {
     getTableProps,
@@ -93,6 +159,8 @@ export default function TableGfilterNestedrow({
     state,
     preGlobalFilteredRows,
     setGlobalFilter,
+    globalFilteredRows,
+    toggleAllRowsExpanded,
   } = useTable(
     {
       columns,
@@ -100,7 +168,18 @@ export default function TableGfilterNestedrow({
       defaultColumn,
       globalFilter: 'text',
       filterTypes,
+      autoResetFilters: !skipPageReset,
+      autoResetGlobalFilter: !skipPageReset,
+      autoResetSortBy: !skipPageReset,
       initialState,
+      autoResetPage: !skipPageReset,
+      // updateMyData isn't part of the API, but
+      // anything we put into these options will
+      // automatically be available on the instance.
+      // That way we can call this function from our
+      // cell renderer!
+      updateMyData,
+      updateMyDataDatabase,
     },
     useFilters,
     useGlobalFilter,
@@ -112,7 +191,7 @@ export default function TableGfilterNestedrow({
   );
 
   return (
-    <>
+    <Styles>
       <Row className="justify-content-center">
         <Col
           xs={10}
@@ -124,33 +203,27 @@ export default function TableGfilterNestedrow({
             preGlobalFilteredRows={preGlobalFilteredRows}
             globalFilter={state.globalFilter}
             setGlobalFilter={setGlobalFilter}
+            globalFilteredRows={globalFilteredRows}
+            toggleAllRowsExpanded={toggleAllRowsExpanded}
           />
         </Col>
       </Row>
 
-      <Row className="pt-3">
-        <Table bordered hover size="sm" {...getTableProps()} responsive="sm">
+      <Row className="py-3">
+        <Table striped bordered size="sm" {...getTableProps()} responsive="md">
           <thead>
             {headerGroups.map((headerGroup) => (
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map((column) => (
-                  <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  <th
+                    className="text-center align-middle"
+                    {...column.getHeaderProps()}
+                  >
                     {column.render('Header')}
-                    {column.canSort ? (
-                      <span>
-                        {' '}
-                        <FaSort />
-                        {column.isSorted ? (
-                          column.isSortedDesc ? (
-                            <FaSortAlphaUp />
-                          ) : (
-                            <FaSortAlphaDown />
-                          )
-                        ) : (
-                          ''
-                        )}
-                      </span>
-                    ) : null}
+                    <Row className="text-center">
+                      {column.canSort ? <SortBy column={column} /> : null}
+                      {column.canFilter ? column.render('Filter') : null}
+                    </Row>
                   </th>
                 ))}
               </tr>
@@ -164,7 +237,9 @@ export default function TableGfilterNestedrow({
                   <tr {...row.getRowProps()}>
                     {row.cells.map((cell) => (
                       <td
-                        className="py-3"
+                        className={`text-center py-3 ${
+                          row.isExpanded ? 'bg-info text-white' : 'fw-normal'
+                        }`}
                         style={{
                           verticalAlign: 'middle',
                         }}
@@ -182,10 +257,11 @@ export default function TableGfilterNestedrow({
                     <tr {...row.getRowProps()} className="border-0">
                       <td
                         colSpan={visibleColumns.length}
+                        className="bg-info"
                         style={{
                           width: '100%',
                           borderColor: 'rgb(222,226,230)',
-                          background: '#FFF',
+                          // background: '#FFF',
                         }}
                       >
                         {/*
@@ -268,8 +344,8 @@ export default function TableGfilterNestedrow({
               type="number"
               defaultValue={state.pageIndex + 1}
               onChange={(e) => {
-                const page1 = e.target.value ? Number(e.target.value) - 1 : 0;
-                gotoPage(page1);
+                const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                gotoPage(page);
               }}
               style={{ width: '60px' }}
               className="text-center"
@@ -292,6 +368,6 @@ export default function TableGfilterNestedrow({
           </Form.Select>
         </Form.Group>
       </Row>
-    </>
+    </Styles>
   );
 }

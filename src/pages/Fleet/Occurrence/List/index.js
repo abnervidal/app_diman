@@ -1,41 +1,134 @@
 /* eslint-disable no-nested-ternary */
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { FaImages } from 'react-icons/fa';
+import { FaImages, FaSearch, FaPencilAlt } from 'react-icons/fa';
 
-import { Container, Row, Card, Col, Badge, Button } from 'react-bootstrap';
+import {
+  Container,
+  Row,
+  Card,
+  Col,
+  Badge,
+  Button,
+  Dropdown,
+  OverlayTrigger,
+  Tooltip,
+} from 'react-bootstrap';
 
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 
 // import generic table from material's components with global filter and nested row
-import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
+// import TableGfilterNestedrow from '../../components/TableGfilterNestedRow';
+import TableGfilterNestedrowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
+import EditModal from '../../components/EditModalOccurrence';
+
+const renderTooltip = (props, message) => (
+  <Tooltip id="button-tooltip" {...props}>
+    {message}
+  </Tooltip>
+);
+
+// trigger to custom filter
+function DefaultColumnFilter() {
+  return <> </>;
+} // as colunas padrao nao aplicam filtro
+
+function SelectColumnFilter({
+  column: { filterValue, setFilter, preFilteredRows, id },
+  toggleAllRowsExpanded,
+}) {
+  // Calculate the options for filtering
+  // using the preFilteredRows
+  const options = React.useMemo(() => {
+    const options = new Set();
+    preFilteredRows.forEach((row) => {
+      options.add(row.values[id]);
+    });
+    return [...options.values()];
+  }, [id, preFilteredRows]);
+  // Render a multi-select box
+  return (
+    <Col>
+      <OverlayTrigger
+        placement="left"
+        delay={{ show: 250, hide: 400 }}
+        overlay={(props) => renderTooltip(props, `Filter for ${id}`)}
+      >
+        <Dropdown>
+          <Dropdown.Toggle
+            variant="outline-primary"
+            size="sm"
+            id="dropdown-group"
+            className="border-0"
+            // onClick={() => toggleAllRowsExpanded(true)}
+            onFocus={() => toggleAllRowsExpanded(false)} // tirando a expansao antes de filtrar, evita bugs
+          >
+            {filterValue ? <span>{filterValue}</span> : <FaSearch />}
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                // toggleAllRowsExpanded(false);
+                setFilter('');
+              }}
+            >
+              Remover Filtro
+            </Dropdown.Item>
+            {options.sort().map((option, i) => (
+              <Dropdown.Item
+                key={i}
+                onClick={() => {
+                  setFilter(option || undefined);
+                }}
+              >
+                {option}{' '}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </OverlayTrigger>
+    </Col>
+  );
+}
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [cars, setCars] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [dataModal, setDataModal] = useState('');
   // const [carsOccurrences, setCarsOccurrences] = useState([]);
 
-  useEffect(() => {
-    async function getData() {
-      try {
-        setIsLoading(true);
-        const response = await axios.get('/cars/occurrences/');
-        // const response2 = await axios.get('/cars/occurrences');
-        setCars(response.data);
-        // setCarsOccurrences(response2.data);
-        setIsLoading(false);
-      } catch (err) {
-        // eslint-disable-next-line no-unused-expressions
-        err.response?.data?.errors
-          ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
-          : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
-        setIsLoading(false);
-      }
+  async function getData() {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/cars/occurrences/');
+      // const response2 = await axios.get('/cars/occurrences');
+      setCars(response.data);
+      // setCarsOccurrences(response2.data);
+      setIsLoading(false);
+    } catch (err) {
+      // eslint-disable-next-line no-unused-expressions
+      err.response?.data?.errors
+        ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
+        : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
+      setIsLoading(false);
     }
+  }
 
+  const handleCloseEditModal = () => setShowEditModal(false);
+  const handleSaveEditModal = () => {
+    setShowEditModal(false);
+    getData();
+  };
+  const handleShowEditModal = (data) => {
+    setDataModal(data);
+    setShowEditModal(true);
+  };
+  useEffect(() => {
     getData();
   }, []);
 
@@ -62,9 +155,11 @@ export default function Index() {
       },
       {
         Header: 'ID',
+        // accessor: (originalRow) => originalRow.Car?.id,
         accessor: 'id',
-        width: 100,
+        width: 80,
         disableResizing: true,
+        disableSortBy: false,
         isVisible: window.innerWidth > 768,
         Cell: ({ row, value }) => {
           const getItems = useCallback(
@@ -92,24 +187,111 @@ export default function Index() {
         },
       },
       {
-        Header: 'Apelido',
-        accessor: (originalRow) => originalRow.Car?.alias,
+        Header: 'Veículo',
+        accessor: (originalRow) =>
+          `${originalRow.Car?.alias} - ${originalRow.Car?.model} - ${originalRow.Car?.plate}`,
       },
       {
         Header: 'Marca',
         accessor: (originalRow) => originalRow.Car?.brand,
+        Filter: SelectColumnFilter,
+        filter: 'text',
       },
       {
-        Header: 'Modelo',
-        accessor: (originalRow) => originalRow.Car?.model,
+        Header: 'Tipo de Ocorrência',
+        accessor: (originalRow) => originalRow.CarOccurrencetype?.type,
+        Filter: SelectColumnFilter,
+        filter: 'text',
       },
       {
-        Header: 'Placa',
-        accessor: (originalRow) => originalRow.Car?.plate,
+        Header: 'Motorista',
+        accessor: (originalRow) => originalRow.Worker?.name,
+        Filter: SelectColumnFilter,
+        filter: 'text',
       },
       {
-        Header: 'Categoria',
-        accessor: (originalRow) => originalRow.Car.Cartype?.type,
+        Header: 'Data da Ocorrência',
+        accessor: 'data',
+        disableSortBy: false,
+      },
+      // {
+      //   Header: 'Categoria',
+      //   accessor: (originalRow) => originalRow.Car.Cartype?.type,
+      // },
+      {
+        Header: '',
+        id: 'actions',
+        width: 50,
+        disableResizing: true,
+        disableSortBy: true,
+        isVisible: window.innerWidth > 768,
+        // eslint-disable-next-line react/no-unstable-nested-components
+        Cell: ({ row }) => (
+          <Row className="d-flex flex-nowrap justify-content-center">
+            <Col xs="auto" className="text-center m-0 p-0 px-1">
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => renderTooltip(props, 'Editar veículo')}
+              >
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  className="border-0 m-0"
+                  onClick={() => handleShowEditModal(row.original)}
+                  hidden={
+                    row.original?.withdrawnAtBr ||
+                    row.original?.separatedAtBr ||
+                    row.original?.canceledAtBr
+                  }
+                >
+                  <FaPencilAlt />
+                </Button>
+              </OverlayTrigger>
+            </Col>
+            {/* <Col xs="auto" className="text-center m-0 p-0 px-1">
+              <>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={(props) => renderTooltip(props, 'Excluir veículo')}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    className="border-0"
+                    onClick={(e) => {
+                      handleCancelAsk(e, row.original);
+                    }}
+                    hidden={
+                      row.original?.withdrawnAtBr ||
+                      row.original?.separatedAtBr ||
+                      row.original?.canceledAtBr
+                    }
+                  >
+                    <FaTimes />
+                  </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 250, hide: 400 }}
+                  overlay={(props) => renderTooltip(props, 'Confirmar ação')}
+                >
+                  <Button
+                    size="sm"
+                    variant="outline-warning"
+                    className="border-0 d-none"
+                    // onClick={() => {
+                    //   handleCancelReserve(row.original);
+                    // }}
+                  >
+                    <FaExclamation />
+                  </Button>
+                </OverlayTrigger>
+              </>
+            </Col> */}
+          </Row>
+        ),
       },
     ],
     []
@@ -121,7 +303,8 @@ export default function Index() {
   const defaultColumn = React.useMemo(
     () => ({
       // Let's set up our default Filter UI
-      // Filter: DefaultColumnFilter,
+      Filter: DefaultColumnFilter,
+      disableSortBy: true,
       minWidth: 30,
       width: 120,
       maxWidth: 800,
@@ -132,7 +315,7 @@ export default function Index() {
   const initialState = {
     sortBy: [
       {
-        id: 'name',
+        id: 'id',
         asc: true,
       },
     ],
@@ -169,15 +352,7 @@ export default function Index() {
     []
   );
 
-  const renderRowSubSubComponent = React.useCallback(
-    ({ row }) => (
-      <>
-        <span className="fw-bold">Especificação:</span>
-        {row.original.obs}
-      </>
-    ),
-    []
-  );
+  const renderRowSubSubComponent = React.useCallback(({ row }) => <></>, []);
 
   // Create a function that will render our row sub components
   const renderRowSubComponent = React.useCallback(
@@ -195,39 +370,8 @@ export default function Index() {
               style={{ padding: 0, margin: 0 }}
               columns={[
                 {
-                  // Make an expander cell
-                  Header: ({
-                    getToggleAllRowsExpandedProps,
-                    isAllRowsExpanded,
-                  }) => (
-                    <span {...getToggleAllRowsExpandedProps()}>
-                      {isAllRowsExpanded ? '▽' : '▷'}
-                    </span>
-                  ),
-                  id: 'expander', // It needs an ID
-                  width: 30,
-                  disableResizing: true,
-                  Cell: ({ row }) => (
-                    // Use Cell to render an expander for each row.
-                    // We can use the getToggleRowExpandedProps prop-getter
-                    // to build the expander.
-                    <span {...row.getToggleRowExpandedProps()}>
-                      {row.isExpanded ? '▽' : '▷'}
-                    </span>
-                  ),
-                },
-                {
-                  Header: 'Motorista',
-                  accessor: (originalRow) => originalRow.Worker?.name,
-                },
-                {
-                  Header: 'Tipo de Ocorrência',
-                  accessor: (originalRow) =>
-                    originalRow.CarOccurrencetype?.type,
-                },
-                {
-                  Header: 'Data da Ocorrência',
-                  accessor: 'data',
+                  Header: 'Especificações',
+                  accessor: 'obs',
                 },
               ]}
               data={[row.original]}
@@ -302,13 +446,19 @@ export default function Index() {
       {' '}
       {console.log(cars)}
       <Loading isLoading={isLoading} />
+      <EditModal // modal p/ pesquisa de materiais
+        handleClose={handleCloseEditModal}
+        show={showEditModal}
+        data={dataModal}
+        handleSave={handleSaveEditModal}
+      />
       <Container>
         <Row className="text-center py-3">
-          <Card.Title>Automóveis Cadastrados</Card.Title>
+          <Card.Title>Ocorrências Cadastrados</Card.Title>
           <Card.Text>Cadastros realizados no sisman.</Card.Text>
         </Row>
 
-        <TableGfilterNestedrow
+        <TableGfilterNestedrowHiddenRows
           columns={columns}
           data={data}
           defaultColumn={defaultColumn}

@@ -392,12 +392,6 @@ export default function CarOccurrence({ initialValues = null }) {
                     <PreviewMultipleImages files={files} setFiles={setFiles} />
                   </Row>
 
-                  {/* <Button variant="primary" type="submit">
-                    {isEditMode ? 'Save' : 'Add'}
-                  </Button>
-                  <Button variant="danger" type="reset">
-                    Reset
-                  </Button> */}
                   <Row className="justify-content-center pt-2 pb-4">
                     <>
                       <Col xs="auto" className="text-center">
