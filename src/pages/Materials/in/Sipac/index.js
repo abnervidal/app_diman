@@ -89,6 +89,7 @@ export default function inputMaterial() {
       const requisicoes = {
         requisicoes: Object.values(reqs).map((item) => item.req),
       };
+      console.log(requisicoes);
       const response = await axios.post(
         `${process.env.REACT_APP_BASE_AXIOS_SIPAC}/reqmaterial`,
         requisicoes

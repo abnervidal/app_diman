@@ -25,7 +25,7 @@ import Adm from '../pages/Adm';
 import Fleet from '../pages/Fleet';
 import Unauthorized from '../components/Unauthorized';
 
-import Test from '../pages/Infra/Edificio/Geolocation';
+import Test from '../components/LoginSipac';
 import BigCalendar from '../components/BigCalendar';
 
 // TRANSFORMANDO O ARRAY userRoletypes PARA UM OBJETO ONDE ROLE É A CHAVE E O CÓDIGO É O VALOR
@@ -40,6 +40,8 @@ export default function RoutesPages() {
       {/* public routes */}
       {/* <Route path="/lightbox" element={<LightBox />} />
       <Route path="/photoswipe" element={<PhotoSwipe />} /> */}
+
+      <Route path="/test" element={<Test />} />
 
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />

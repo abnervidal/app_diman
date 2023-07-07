@@ -4,12 +4,16 @@ import React, { useEffect, useContext } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { primaryDarkColor } from '../../../../../config/colors';
 
-import Subdivision from '../../Subdivision/index';
-
-import Geolocation from '../../Geolocation/index';
+import LoginSipac from '../../../../../components/LoginSipac';
 
 export default function ModalEdit(props) {
-  const { show, handleSaveModal, handleCancelModal, data, modalName } = props;
+  const {
+    show,
+    handleSaveModal,
+    handleCancelModal,
+    getCredentials,
+    setFieldValue,
+  } = props;
 
   // Manipulando o botão de voltar do navegador para não sair da página de reserva
   useEffect(() => {
@@ -32,61 +36,27 @@ export default function ModalEdit(props) {
     };
   }, []);
 
-  const renderSwitch = (param) => {
-    switch (param) {
-      case 'Subdivision':
-        return (
-          <Subdivision
-            buildingData={data.original}
-            handleCancelModal={handleCancelModal}
-            handleSaveModal={handleSaveModal}
-          />
-        );
-      case 'Geolocation':
-        return (
-          <Geolocation
-            buildingData={data.original}
-            handleCancelModal={handleCancelModal}
-            handleSaveModal={handleSaveModal}
-          />
-        );
-      default:
-        return 'foo';
-    }
-  };
-
-  const renderSwitchTitle = (param) => {
-    switch (param) {
-      case 'Subdivision':
-        return 'Subdivisões de Instalações';
-      case 'Geolocation':
-        return 'Localização';
-      default:
-        return 'foo';
-    }
-  };
-
   return (
     <Modal
       show={show}
       onHide={handleCancelModal}
       backdrop="static"
       keyboard={false}
-      size="xl"
+      size="md"
     >
       <Modal.Header
         style={{ background: primaryDarkColor, color: 'white' }}
         closeButton
       >
-        <Modal.Title>{renderSwitchTitle(modalName)}</Modal.Title>
+        <Modal.Title>Login Sipac</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* <Subdivision
-          buildingData={data}
+        <LoginSipac
           handleCancelModal={handleCancelModal}
           handleSaveModal={handleSaveModal}
-        /> */}
-        {renderSwitch(modalName)}
+          getCredentials={getCredentials}
+          setFieldValue={setFieldValue}
+        />
       </Modal.Body>
       {/* <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>

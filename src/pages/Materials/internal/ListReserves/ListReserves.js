@@ -48,6 +48,61 @@ function DefaultColumnFilter() {
   return <> teste </>;
 } // as colunas padrao nao aplicam filtro
 
+function SelectColumnFilter({
+  column: { filterValue, setFilter, preFilteredRows, id },
+}) {
+  // Calculate the options for filtering
+  // using the preFilteredRows
+  const options = React.useMemo(() => {
+    const options = new Set();
+    preFilteredRows.forEach((row) => {
+      options.add(row.values[id]);
+    });
+    return [...options.values()];
+  }, [id, preFilteredRows]);
+  // Render a multi-select box
+  return (
+    <Col>
+      <OverlayTrigger
+        placement="left"
+        delay={{ show: 250, hide: 400 }}
+        overlay={(props) => renderTooltip(props, `Filter for ${id}`)}
+      >
+        <Dropdown>
+          <Dropdown.Toggle
+            variant="outline-primary"
+            size="sm"
+            id="dropdown-group"
+            className="border-0"
+          >
+            {filterValue ? <span>{filterValue}</span> : <FaSearch />}
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                setFilter('');
+              }}
+            >
+              Remover Filtro
+            </Dropdown.Item>
+            {options.sort().map((option, i) => (
+              <Dropdown.Item
+                key={i}
+                onClick={() => {
+                  setFilter(option || undefined);
+                }}
+              >
+                {option}{' '}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </OverlayTrigger>
+    </Col>
+  );
+}
+
 // This is a custom filter UI for selecting
 // a unique option from a list
 function SelectColumnFilterStatus({
@@ -59,6 +114,61 @@ function SelectColumnFilterStatus({
     () => ['EM ESPERA', 'SEPARADA', 'UTILIZADA', 'CANCELADA'],
     []
   );
+
+  function SelectColumnFilter({
+    column: { filterValue, setFilter, preFilteredRows, id },
+  }) {
+    // Calculate the options for filtering
+    // using the preFilteredRows
+    const options = React.useMemo(() => {
+      const options = new Set();
+      preFilteredRows.forEach((row) => {
+        options.add(row.values[id]);
+      });
+      return [...options.values()];
+    }, [id, preFilteredRows]);
+    // Render a multi-select box
+    return (
+      <Col>
+        <OverlayTrigger
+          placement="left"
+          delay={{ show: 250, hide: 400 }}
+          overlay={(props) => renderTooltip(props, `Filter for ${id}`)}
+        >
+          <Dropdown>
+            <Dropdown.Toggle
+              variant="outline-primary"
+              size="sm"
+              id="dropdown-group"
+              className="border-0"
+            >
+              {filterValue ? <span>{filterValue}</span> : <FaSearch />}
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu>
+              <Dropdown.Item
+                onClick={() => {
+                  setFilter('');
+                }}
+              >
+                Remover Filtro
+              </Dropdown.Item>
+              {options.sort().map((option, i) => (
+                <Dropdown.Item
+                  key={i}
+                  onClick={() => {
+                    setFilter(option || undefined);
+                  }}
+                >
+                  {option}{' '}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        </OverlayTrigger>
+      </Col>
+    );
+  }
 
   // Render a multi-select box
   return (
@@ -351,7 +461,8 @@ export default function Index() {
           return <span> {custom}</span>;
         },
         disableSortBy: true,
-        disableFilters: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
         isVisible: window.innerWidth > 768,
       },
       {
@@ -374,7 +485,8 @@ export default function Index() {
           return <span> {custom}</span>;
         },
         disableSortBy: true,
-        disableFilters: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
         isVisible: window.innerWidth > 768,
       },
 

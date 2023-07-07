@@ -59,15 +59,21 @@ export default function MaterialsRoutes() {
           />
         }
       >
-        <Route path="frequency" element={<Frequency />}>
-          <Route path="facialrecognition" element={<FacialRecognition />} />{' '}
-          <Route path="manual" element={<FrequencyManual />} />{' '}
-        </Route>
-
         <Route path="record" element={<Record />}>
           <Route path="list" element={<List />} />{' '}
           <Route path="add" element={<Add />} />{' '}
           <Route path="update/:id" element={<Add />} />{' '}
+        </Route>
+      </Route>
+
+      <Route path="/Unauthorized" element={<Unauthorized />} />
+      {/* we want to protect these routes */}
+      <Route
+        element={<RequireAuth allowedRoles={[roles.adm, roles.adm_workers]} />}
+      >
+        <Route path="frequency" element={<Frequency />}>
+          <Route path="facialrecognition" element={<FacialRecognition />} />{' '}
+          <Route path="manual" element={<FrequencyManual />} />{' '}
         </Route>
       </Route>
     </Routes>

@@ -256,7 +256,7 @@ export default function Index() {
     setShowModalEdit(false);
     // getBuildings();
     // eslint-disable-next-line no-use-before-define
-    updateMyData(rowIndex, columId, value);
+    updateMyData(dataEdit.index, columId, value);
   };
 
   const handleShowModalEdit = (item, modalName) => {
@@ -317,6 +317,7 @@ export default function Index() {
           // const time = new Date().toISOString().split('T')[1].substring(0, 5);
           return {
             ...old[rowIndex],
+            [columnId]: value,
             // initialQuantity: Number(value) - Number(old[rowIndex].balance),
             // dateInitialQuantity: `${date} ${time}`,
           };
@@ -379,41 +380,41 @@ export default function Index() {
         isVisible: window.innerWidth > 768,
         Cell: ({ value }) => <div className="text-start">{value}</div>,
       },
-      {
-        Header: 'Mapa',
-        accessor: 'geo',
-        disableSortBy: true,
-        width: 70,
-        disableResizing: true,
-        Filter: InputColumnFilter,
-        filter: 'text',
-        isVisible: window.innerWidth > 768,
-        Cell: ({ value }) => (
-          <div className="text-center">{value ? <FaMapMarkerAlt /> : null}</div>
-        ),
-      },
-      {
-        Header: 'Pvtos',
-        accessor: 'floors',
-        disableSortBy: true,
-        width: 70,
-        disableResizing: true,
-        Filter: InputColumnFilter,
-        filter: 'text',
-        isVisible: window.innerWidth > 768,
-        Cell: ({ value }) => <div className="text-start">{value}</div>,
-      },
-      {
-        Header: 'Área',
-        accessor: 'area',
-        disableSortBy: true,
-        width: 80,
-        disableResizing: true,
-        Filter: InputColumnFilter,
-        filter: 'text',
-        isVisible: window.innerWidth > 768,
-        Cell: ({ value }) => <div className="text-start">{value}</div>,
-      },
+      // {
+      //   Header: 'Mapa',
+      //   accessor: 'geo',
+      //   disableSortBy: true,
+      //   width: 70,
+      //   disableResizing: true,
+      //   Filter: InputColumnFilter,
+      //   filter: 'text',
+      //   isVisible: window.innerWidth > 768,
+      //   Cell: ({ value }) => (
+      //     <div className="text-center">{value ? <FaMapMarkerAlt /> : null}</div>
+      //   ),
+      // },
+      // {
+      //   Header: 'Pvtos',
+      //   accessor: 'floors',
+      //   disableSortBy: true,
+      //   width: 70,
+      //   disableResizing: true,
+      //   Filter: InputColumnFilter,
+      //   filter: 'text',
+      //   isVisible: window.innerWidth > 768,
+      //   Cell: ({ value }) => <div className="text-start">{value}</div>,
+      // },
+      // {
+      //   Header: 'Área',
+      //   accessor: 'area',
+      //   disableSortBy: true,
+      //   width: 80,
+      //   disableResizing: true,
+      //   Filter: InputColumnFilter,
+      //   filter: 'text',
+      //   isVisible: window.innerWidth > 768,
+      //   Cell: ({ value }) => <div className="text-start">{value}</div>,
+      // },
       {
         Header: 'Zona',
         accessor: 'zone',
@@ -422,6 +423,22 @@ export default function Index() {
         disableResizing: true,
         Filter: InputColumnFilter,
         filter: 'text',
+        isVisible: window.innerWidth > 768,
+        Cell: ({ value }) => (
+          <div className="text-center">{value ?? 'N.A.'}</div>
+        ),
+      },
+      {
+        Header: ({ value, row }) => (
+          <div className="text-start">Propriedade</div>
+        ),
+        id: 'property',
+        accessor: (originalRow) => originalRow.PropertySipac.nomeImovel,
+        disableSortBy: true,
+        width: 260,
+        disableResizing: true,
+        Filter: SelectColumnFilter,
+        filter: 'exactText',
         isVisible: window.innerWidth > 768,
         Cell: ({ value }) => <div className="text-start">{value}</div>,
       },
@@ -452,17 +469,16 @@ export default function Index() {
                     </Dropdown.Item>
                     <Dropdown.Item
                       eventKey="2"
-                      onClick={(e) =>
-                        handleShowModalEdit(row.original, 'Subdivision')
-                      }
+                      onClick={(e) => {
+                        handleShowModalEdit(row, 'Subdivision');
+                        console.log(row);
+                      }}
                     >
                       Subdivisões
                     </Dropdown.Item>
                     <Dropdown.Item
                       eventKey="3"
-                      onClick={(e) =>
-                        handleShowModalEdit(row.original, 'Geolocation')
-                      }
+                      onClick={(e) => handleShowModalEdit(row, 'Geolocation')}
                     >
                       Definir localização
                     </Dropdown.Item>
@@ -478,11 +494,11 @@ export default function Index() {
               >
                 <Button
                   size="sm"
-                  variant="outline-danger"
-                  className="border-0 m-0 ms-1"
-                  onClick={(e) =>
-                    handleShowModalEdit(row.original, 'Geolocation')
+                  variant={
+                    row.original.geo ? 'outline-success' : 'outline-danger'
                   }
+                  className="border-0 m-0 ms-1"
+                  onClick={(e) => handleShowModalEdit(row, 'Geolocation')}
                 >
                   <FaMapMarkedAlt />
                 </Button>

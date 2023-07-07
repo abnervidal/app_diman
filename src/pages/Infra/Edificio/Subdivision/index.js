@@ -352,7 +352,7 @@ function Recursive({
   );
 }
 
-function MyForm({ buildingData }) {
+function MyForm({ buildingData, handleSaveModal = false }) {
   const [isLoading, setIsLoading] = useState(false);
   const [sectionstypes, setSectionstypes] = useState(false);
   const [initialData, setInitialData] = useState(emptyValues);
@@ -457,6 +457,8 @@ function MyForm({ buildingData }) {
       // resetForm();
 
       toast.success(`Registro realizado com sucesso!`);
+
+      handleSaveModal ? handleSaveModal() : null;
 
       setIsLoading(false);
     } catch (err) {

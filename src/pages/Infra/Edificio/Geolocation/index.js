@@ -32,7 +32,7 @@ const onLoadMarker = (marker) => {
   console.log('marker: ', marker);
 };
 
-function MyComponent({ buildingData }) {
+function MyComponent({ buildingData, handleSaveModal = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState();
   const [center, setCenter] = useState({
@@ -83,6 +83,10 @@ function MyComponent({ buildingData }) {
       await axios.put(`/properties/buildings/${buildingData.subRip}`, { geo });
 
       toast.success(`Registro realizado com sucesso!`);
+
+      // atualizar tabela
+      if (handleSaveModal) handleSaveModal(0, 'geo', geo);
+
       setIsLoading(false);
     } catch (err) {
       // eslint-disable-next-line no-unused-expressions
