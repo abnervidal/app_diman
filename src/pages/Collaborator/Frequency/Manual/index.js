@@ -64,6 +64,7 @@ const emptyValues = {
   date: '',
   obs: '',
   WorkerManualfrequencyItems: [],
+  showInactives: false,
 };
 
 export default function Index({ id = null }) {
@@ -120,7 +121,7 @@ export default function Index({ id = null }) {
     const workersOp = [];
     try {
       setIsLoading(true);
-      const response = await axios.get('/workers/actives');
+      const response = await axios.get('/workers/');
       const response1 = await axios.get(`/workersmanualfrequencies/${idEdit}`);
 
       // ajustes
@@ -176,7 +177,7 @@ export default function Index({ id = null }) {
       const workersOp = [];
       try {
         setIsLoading(true);
-        const response = await axios.get('/workers/actives');
+        const response = await axios.get('/workers/');
 
         const workersJobs = response.data
           .filter(
@@ -520,7 +521,27 @@ export default function Index({ id = null }) {
                           {/* <Col sm="12" md="auto">
                             PESQUISA RÁPIDA:
                           </Col> */}
-                          <Col>
+                          <Col
+                            xs="auto"
+                            className="ms-1"
+                            style={{ fontSize: '.75em' }}
+                          >
+                            <Form.Check
+                              // disabled
+                              // reverse
+                              type="checkbox"
+                              label="Mostrar colaboradores desligados"
+                              id="disabled-default-checkbox"
+                              checked={values.showInactives}
+                              onChange={() => {
+                                setFieldValue(
+                                  'showInactives',
+                                  !values.showInactives
+                                );
+                              }}
+                            />
+                          </Col>
+                          <Col xs="12">
                             {' '}
                             <Select
                               inputId="searchWorker"
@@ -533,7 +554,10 @@ export default function Index({ id = null }) {
                                       v.WorkerContracts[0]?.unidadeId ===
                                         values.UnidadeId &&
                                       v.WorkerContracts[0]?.ContractId ===
-                                        values.ContractId
+                                        values.ContractId &&
+                                      (values.showInactives
+                                        ? true
+                                        : !v.WorkerContracts[0]?.end)
                                   )
                                   .filter(
                                     // nao pode adicionar o mesmo item 2x

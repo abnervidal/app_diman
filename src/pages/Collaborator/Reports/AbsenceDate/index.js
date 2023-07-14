@@ -2,6 +2,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Formik } from 'formik'; // FormValidation
 import * as yup from 'yup'; // RulesValidation
@@ -236,10 +237,15 @@ const renderTooltipImage = (props, message, src) => (
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
+  const user = useSelector((state) => state.auth.user);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [dataEdit, setDataEdit] = useState({});
   const [manualFrequencies, setManualFrequencies] = useState([]);
   const inputRef = useRef();
+
+  const allowEdit = !!user.roles.filter(
+    (role) => role.role === 'adm' || role.role === 'adm_workers'
+  ).length;
 
   // cancel modal -> don't update data
   const handleCancelModal = () => {
@@ -356,6 +362,7 @@ export default function Index() {
         id: 'edit',
         width: 70,
         disableResizing: true,
+        isVisible: allowEdit,
         // eslint-disable-next-line react/no-unstable-nested-components
         Cell: ({ value, row }) => (
           <Row className="d-flex flex-nowrap">

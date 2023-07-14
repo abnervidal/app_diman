@@ -472,36 +472,26 @@ export default function Index() {
       },
       {
         Header: () => <div className="p-auto text-center">Conferente</div>,
-        accessor: 'receivedBy',
+        id: 'receivedBy',
+        accessor: (originalRow) =>
+          originalRow.receivedBy?.replace(/(^[a-z]*)\.([a-z]*).*/gm, '$1.$2'), // deixar só os dois primeiros nomes
         width: 150,
         disableResizing: true,
-        Cell: (props) => {
-          const custom = String(props.value).replace(
-            /(^[a-z]*)\.([a-z]*).*/gm,
-            '$1.$2'
-          ); // deixar só os dois primeiros nomes
-          return <span> {custom}</span>;
-        },
         disableSortBy: true,
         Cell: ({ value }) => <div className="p-auto text-center">{value}</div>,
         Filter: SelectColumnFilter,
-        filter: 'includes',
+        filter: 'exactText',
       },
       {
         Header: () => <div className="p-auto text-center">Usuário Pedido</div>,
-        accessor: 'requiredBy',
+        id: 'requiredBy',
+        accessor: (originalRow) =>
+          originalRow.requiredBy?.replace(/(^[a-z]*)\.([a-z]*).*/gm, '$1.$2'), // deixar só os dois primeiros nomes
         width: 150,
         disableResizing: true,
-        Cell: (props) => {
-          const custom = String(props.value).replace(
-            /(^[a-z]*)\.([a-z]*).*/gm,
-            '$1.$2'
-          ); // deixar só os dois primeiros nomes
-          return <div className="p-auto text-center"> {custom}</div>;
-        },
         disableSortBy: true,
         Filter: SelectColumnFilter,
-        filter: 'includes',
+        filter: 'exactText',
       },
       {
         Header: () => <div className="p-auto text-center">Data pedido</div>,

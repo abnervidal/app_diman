@@ -363,7 +363,16 @@ export default function Index() {
       },
       {
         Header: `Iniciou em`,
-        accessor: (originalRow) => originalRow.WorkerContracts[0].startBr,
+        accessor: (originalRow) => (
+          <>
+            <div>{originalRow.WorkerContracts[0].startBr}</div>
+            <div>
+              <div>
+                {originalRow.WorkerContracts[0].end ? 'DESLIGADO' : 'ATIVO'}
+              </div>
+            </div>
+          </>
+        ),
         width: 150,
         disableResizing: true,
         // disableSortBy: true,
