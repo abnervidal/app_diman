@@ -44,6 +44,10 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
     renavan,
     year,
     chassi,
+    payload,
+    weight,
+    fuelVolume,
+    peopleCapacity,
     obs,
     CartypeId,
     CarFueltypeId,
@@ -58,6 +62,10 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
     plate,
     renavan,
     year,
+    payload,
+    weight,
+    fuelVolume,
+    peopleCapacity,
     chassi,
     obs,
     CartypeId,
@@ -478,7 +486,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                   <Form.Group
                     as={Col}
                     xs={12}
-                    lg={7}
+                    lg={4}
                     controlId="CarFueltypeId"
                     className="pb-3"
                   >
@@ -493,7 +501,14 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                             value: item.id,
                             label: item.type,
                           }))}
-                          value={values.CarFueltypeId}
+                          value={
+                            values.CarFueltypeId
+                              ? fuelOptions.find(
+                                  (option) =>
+                                    option.value === values.CarFueltypeId
+                                )
+                              : null
+                          }
                           onChange={(selected) => {
                             setFieldValue('CarFueltypeId', selected.value);
                           }}
@@ -505,7 +520,6 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                           isValid={
                             touched.CarFueltypeId && !errors.CarFueltypeId
                           }
-                          isDisabled
                         />
                       )}
                     </Field>
@@ -519,7 +533,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                   <Form.Group
                     as={Col}
                     xs={12}
-                    lg={5}
+                    lg={4}
                     controlId="chassi"
                     className="pb-3"
                   >
@@ -540,10 +554,145 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                         setFieldValue('chassi', e.target.value.toUpperCase()); // UPPERCASE
                         handleBlur(e);
                       }}
-                      isDisabled
                     />
                     <ErrorMessage
                       name="chassi"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={4}
+                    controlId="payload"
+                    className="pb-3"
+                  >
+                    <Form.Label>CARGA ÚTIL</Form.Label>
+
+                    <Field
+                      type="text"
+                      name="payload"
+                      as={Form.Control}
+                      value={values.payload}
+                      onChange={(e) => {
+                        handleChange(e);
+                      }}
+                      isInvalid={touched.payload && !!errors.payload}
+                      isValid={touched.payload && !errors.payload}
+                      placeholder="BC1D23"
+                      onBlur={(e) => {
+                        setFieldValue('payload', e.target.value.toUpperCase()); // UPPERCASE
+                        handleBlur(e);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="payload"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+                </Row>
+                <Row className="d-flex justify-content-center align-items-top">
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={6}
+                    controlId="weight"
+                    className="pb-3"
+                  >
+                    <Form.Label>PESO BRUTO TOTAL</Form.Label>
+
+                    <Field
+                      type="text"
+                      name="weight"
+                      as={Form.Control}
+                      value={values.weight}
+                      onChange={(e) => {
+                        handleChange(e);
+                      }}
+                      isInvalid={touched.weight && !!errors.weight}
+                      isValid={touched.weight && !errors.weight}
+                      placeholder="BC1D23"
+                      onBlur={(e) => {
+                        setFieldValue('weight', e.target.value.toUpperCase()); // UPPERCASE
+                        handleBlur(e);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="weight"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={3}
+                    controlId="fuelVolume"
+                    className="pb-3"
+                  >
+                    <Form.Label>VOLUME DO TANQUE</Form.Label>
+
+                    <Field
+                      type="text"
+                      name="fuelVolume"
+                      as={Form.Control}
+                      value={values.fuelVolume}
+                      onChange={(e) => {
+                        handleChange(e);
+                      }}
+                      isInvalid={touched.fuelVolume && !!errors.fuelVolume}
+                      isValid={touched.fuelVolume && !errors.fuelVolume}
+                      placeholder="BC1D23"
+                      onBlur={(e) => {
+                        setFieldValue(
+                          'fuelVolume',
+                          e.target.value.toUpperCase()
+                        ); // UPPERCASE
+                        handleBlur(e);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="fuelVolume"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+                  <Form.Group
+                    as={Col}
+                    xs={12}
+                    lg={3}
+                    controlId="peopleCapacity"
+                    className="pb-3"
+                  >
+                    <Form.Label>CAPACIDADE DE PESSOAS</Form.Label>
+
+                    <Field
+                      type="text"
+                      name="peopleCapacity"
+                      as={Form.Control}
+                      value={values.peopleCapacity}
+                      onChange={(e) => {
+                        handleChange(e);
+                      }}
+                      isInvalid={
+                        touched.peopleCapacity && !!errors.peopleCapacity
+                      }
+                      isValid={touched.peopleCapacity && !errors.peopleCapacity}
+                      placeholder="BC1D23"
+                      onBlur={(e) => {
+                        setFieldValue(
+                          'peopleCapacity',
+                          e.target.value.toUpperCase()
+                        ); // UPPERCASE
+                        handleBlur(e);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="peopleCapacity"
                       component="div"
                       className="invalid-feedback"
                     />

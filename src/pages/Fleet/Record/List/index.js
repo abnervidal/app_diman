@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { get } from 'lodash';
 import { toast } from 'react-toastify';
-import { FaImages, FaSearch, FaPencilAlt } from 'react-icons/fa';
+import { FaImages, FaSearch, FaPencilAlt, FaEllipsisH } from 'react-icons/fa';
 
 import {
   Container,
@@ -29,6 +29,8 @@ import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
 import TableGfilterNestedRowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import EditModal from '../../components/EditModal';
+import EditModalAccessory from '../../components/EditModalAccessory';
+import EditModalStatus from '../../components/EditModalStatus';
 
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>
@@ -40,6 +42,56 @@ const renderTooltip = (props, message) => (
 function DefaultColumnFilter() {
   return <> </>;
 } // as colunas padrao nao aplicam filtro
+
+function SelectColumnFilterStatus({
+  column: { filterValue, setFilter, preFilteredRows, id },
+}) {
+  // Calculate the options for filtering
+  // using the preFilteredRows
+  const options = React.useMemo(() => ['ATIVO', 'OFICINA', 'INATIVO'], []);
+
+  // Render a multi-select box
+  return (
+    <Col>
+      <OverlayTrigger
+        placement="left"
+        delay={{ show: 250, hide: 400 }}
+        overlay={(props) => renderTooltip(props, 'Filtragem por status')}
+      >
+        <Dropdown>
+          <Dropdown.Toggle
+            variant="outline-primary"
+            size="sm"
+            id="dropdown-group"
+            className="border-0"
+          >
+            <FaSearch /> {filterValue}
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                setFilter('');
+              }}
+            >
+              Remover Filtro
+            </Dropdown.Item>
+            {options.map((option, i) => (
+              <Dropdown.Item
+                key={i}
+                onClick={() => {
+                  setFilter(option || undefined);
+                }}
+              >
+                {option}{' '}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </OverlayTrigger>
+    </Col>
+  );
+}
 
 function SelectColumnFilter({
   column: { filterValue, setFilter, preFilteredRows, id },
@@ -104,7 +156,11 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [cars, setCars] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditModalAccessory, setShowEditModalAccessory] = useState(false);
+  const [showEditModalStatus, setShowEditModalStatus] = useState(false);
   const [dataModal, setDataModal] = useState('');
+  const [dataModalAccessory, setDataModalAccessory] = useState('');
+  const [dataModalStatus, setDataModalStatus] = useState('');
 
   async function getData() {
     try {
@@ -122,13 +178,31 @@ export default function Index() {
   }
 
   const handleCloseEditModal = () => setShowEditModal(false);
+  const handleCloseEditModalStatus = () => setShowEditModalStatus(false);
+  const handleCloseEditModalAccessory = () => setShowEditModalAccessory(false);
   const handleSaveEditModal = () => {
     setShowEditModal(false);
+    getData();
+  };
+  const handleSaveEditModalStatus = () => {
+    setShowEditModalStatus(false);
+    getData();
+  };
+  const handleSaveEditModalAccessory = () => {
+    setShowEditModalAccessory(false);
     getData();
   };
   const handleShowEditModal = (data) => {
     setDataModal(data);
     setShowEditModal(true);
+  };
+  const handleShowEditModalStatus = (data) => {
+    setDataModalStatus(data);
+    setShowEditModalStatus(true);
+  };
+  const handleShowEditModalAccessory = (data) => {
+    setDataModalAccessory(data);
+    setShowEditModalAccessory(true);
   };
 
   useEffect(() => {
@@ -194,18 +268,11 @@ export default function Index() {
             <>
               <div className="text-center">{value}</div>
               <div className="text-center">
-                {row.original.CarPhotos.length > 0 ? getItems() : null}
+                {row.original.CarPhotos?.length > 0 ? getItems() : null}
               </div>
             </>
           );
         },
-      },
-      {
-        Header: 'Apelido',
-        accessor: 'alias',
-        width: 150,
-        disableResizing: true,
-        disableSortBy: true,
       },
       {
         Header: 'Marca',
@@ -214,8 +281,9 @@ export default function Index() {
         Filter: SelectColumnFilter,
       },
       {
-        Header: 'Modelo',
-        accessor: 'model',
+        Header: 'Modelo - Apelido',
+        accessor: (originalRow) =>
+          `${originalRow.model} - ${originalRow.alias}`,
         disableSortBy: true,
       },
       {
@@ -230,9 +298,26 @@ export default function Index() {
         Filter: SelectColumnFilter,
       },
       {
-        Header: '',
+        Header: 'Combustível',
+        accessor: (originalRow) => originalRow.CarFueltype?.type,
+        disableSortBy: true,
+        width: 100,
+      },
+      {
+        Header: 'Status',
+        id: (originalRow) => originalRow.CarStatuses?.CarStatustypeId.type,
+        width: 140,
+        disableResizing: true,
+
+        defaultCanFilter: true,
+        Filter: SelectColumnFilterStatus,
+        filter: 'groupStatus',
+        isVisible: window.innerWidth > 768,
+      },
+      {
+        Header: 'Ações',
         id: 'actions',
-        width: 50,
+        width: 75,
         disableResizing: true,
         disableSortBy: true,
         isVisible: window.innerWidth > 768,
@@ -243,64 +328,35 @@ export default function Index() {
               <OverlayTrigger
                 placement="top"
                 delay={{ show: 250, hide: 400 }}
-                overlay={(props) => renderTooltip(props, 'Editar veículo')}
+                overlay={(props) => renderTooltip(props, 'Opções')}
               >
-                <Button
-                  size="sm"
-                  variant="outline-secondary"
-                  className="border-0 m-0"
-                  onClick={() => handleShowEditModal(row.original)}
-                  hidden={
-                    row.original?.withdrawnAtBr ||
-                    row.original?.separatedAtBr ||
-                    row.original?.canceledAtBr
-                  }
-                >
-                  <FaPencilAlt />
-                </Button>
+                <Dropdown>
+                  <Dropdown.Toggle id="dropdown-basic">
+                    <FaEllipsisH />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item
+                      eventKey="1"
+                      onClick={() => handleShowEditModal(row.original)}
+                    >
+                      Editar Veículo
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      eventKey="3"
+                      onClick={() => handleShowEditModalStatus(row.original)}
+                    >
+                      Editar Status
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      eventKey="2"
+                      onClick={() => handleShowEditModalAccessory(row.original)}
+                    >
+                      Editar Acessório
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </OverlayTrigger>
             </Col>
-            {/* <Col xs="auto" className="text-center m-0 p-0 px-1">
-              <>
-                <OverlayTrigger
-                  placement="top"
-                  delay={{ show: 250, hide: 400 }}
-                  overlay={(props) => renderTooltip(props, 'Excluir veículo')}
-                >
-                  <Button
-                    size="sm"
-                    variant="outline-danger"
-                    className="border-0"
-                    onClick={(e) => {
-                      handleCancelAsk(e, row.original);
-                    }}
-                    hidden={
-                      row.original?.withdrawnAtBr ||
-                      row.original?.separatedAtBr ||
-                      row.original?.canceledAtBr
-                    }
-                  >
-                    <FaTimes />
-                  </Button>
-                </OverlayTrigger>
-                <OverlayTrigger
-                  placement="top"
-                  delay={{ show: 250, hide: 400 }}
-                  overlay={(props) => renderTooltip(props, 'Confirmar ação')}
-                >
-                  <Button
-                    size="sm"
-                    variant="outline-warning"
-                    className="border-0 d-none"
-                    // onClick={() => {
-                    //   handleCancelReserve(row.original);
-                    // }}
-                  >
-                    <FaExclamation />
-                  </Button>
-                </OverlayTrigger>
-              </>
-            </Col> */}
           </Row>
         ),
       },
@@ -415,7 +471,6 @@ export default function Index() {
                   width: 120,
                   disableResizing: true,
                   disableSortBy: true,
-                  filter: 'rangeDate',
                 },
                 {
                   Header: 'Renavan',
@@ -430,8 +485,20 @@ export default function Index() {
                   accessor: 'chassi',
                 },
                 {
-                  Header: 'Combustível',
-                  accessor: (originalRow) => originalRow.CarFueltype?.type,
+                  Header: 'Carga Útil',
+                  accessor: 'payload',
+                },
+                {
+                  Header: 'Peso Bruto Total',
+                  accessor: 'weight',
+                },
+                {
+                  Header: 'Vol.Tanque',
+                  accessor: 'fuelVolume',
+                },
+                {
+                  Header: 'Cap. Pessoas',
+                  accessor: 'peopleCapacity',
                 },
               ]}
               data={[row.original]}
@@ -461,7 +528,48 @@ export default function Index() {
               filterTypes={filterTypes}
               renderRowSubComponent={renderRowSubSubComponent}
             />
-            {row.original.CarPhotos.length ? (
+            {row.original.CarAccessories?.length ? (
+              <>
+                <Row>
+                  <Col className="text-center">
+                    <span className="text-center fw-bold">ACESSÓRIOS</span>
+                    {JSON.stringify(row.original.CarAccessories)}
+                  </Col>
+                </Row>
+                <TableNestedrow
+                  style={{ padding: 0, margin: 0 }}
+                  columns={[
+                    {
+                      Header: 'Acessório',
+                      accessor: (originalRow) => originalRow.CarAccessorytypeId,
+                      width: 120,
+                      disableResizing: true,
+                      disableSortBy: true,
+                    },
+                    {
+                      Header: 'Capacidade de Carga',
+                      accessor: 'payload',
+                    },
+                    {
+                      Header: 'Tamanho',
+                      accessor: 'dimension',
+                    },
+                    {
+                      Header: 'Observação',
+                      accessor: 'obs',
+                    },
+                  ]}
+                  data={row.original.CarAccessories}
+                  defaultColumn={{
+                    minWidth: 30,
+                    width: 50,
+                    maxWidth: 800,
+                  }}
+                  filterTypes={filterTypes}
+                />
+              </>
+            ) : null}
+            {row.original.CarPhotos?.length ? (
               <>
                 <br />
                 <Row>
@@ -496,7 +604,7 @@ export default function Index() {
                 />
               </>
             ) : null}
-            {row.original.CarPhotos.length ? (
+            {row.original.CarPhotos?.length ? (
               <GalleryComponent
                 images={row.original.CarPhotos}
                 hasDimensions={false}
@@ -522,6 +630,18 @@ export default function Index() {
         show={showEditModal}
         data={dataModal}
         handleSave={handleSaveEditModal}
+      />
+      <EditModalAccessory // modal p/ pesquisa de materiais
+        handleClose={handleCloseEditModalAccessory}
+        show={showEditModalAccessory}
+        data={dataModalAccessory}
+        handleSave={handleSaveEditModalAccessory}
+      />
+      <EditModalStatus // modal p/ pesquisa de materiais
+        handleClose={handleCloseEditModalStatus}
+        show={showEditModalStatus}
+        data={dataModalStatus}
+        handleSave={handleSaveEditModalStatus}
       />
       <Container>
         <Row className="text-center py-3">

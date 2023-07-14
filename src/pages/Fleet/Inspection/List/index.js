@@ -196,14 +196,19 @@ export default function Index() {
         filter: 'text',
       },
       {
-        Header: 'Categoria',
-        accessor: (originalRow) => originalRow.Car.Cartype?.type,
+        Header: 'Motorista',
+        accessor: (originalRow) => originalRow.Worker?.name,
         Filter: SelectColumnFilter,
         filter: 'text',
       },
       {
         Header: 'Quilometragem',
         accessor: 'milage',
+        disableSortBy: false,
+      },
+      {
+        Header: 'Horimetro',
+        accessor: 'hourmeter',
         disableSortBy: false,
       },
       {

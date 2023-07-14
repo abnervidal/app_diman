@@ -29,15 +29,28 @@ const formatGroupLabel = (data) => (
 export default function EditModal({ show, handleClose, data, handleSave }) {
   const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
+  const [workers, setWorkers] = useState([]);
   const inputRef = useRef();
   const [cars, setCars] = useState([]);
 
-  const { CarId, milage, date, internal, external, obs, id } = data;
+  const {
+    CarId,
+    WorkerId,
+    milage,
+    date,
+    hourmeter,
+    internal,
+    external,
+    obs,
+    id,
+  } = data;
 
   const initialValues = {
     CarId,
+    WorkerId,
     milage,
     date,
+    hourmeter,
     internal,
     external,
     obs,
@@ -55,7 +68,9 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
       try {
         setIsLoading(true);
         const response = await axios.get('/cars/');
+        const response2 = await axios.get('/workers/actives/');
         setCars(response.data);
+        setWorkers(response2.data);
         setIsLoading(false);
       } catch (err) {
         // eslint-disable-next-line no-unused-expressions
@@ -242,6 +257,86 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                     />
                     <ErrorMessage
                       name="date"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+                </Row>
+
+                <Row className="d-flex justify-content-center align-items-top">
+                  <Form.Group
+                    controlId="WorkerId"
+                    as={Col}
+                    xs={12}
+                    md={7}
+                    className="pb-3"
+                  >
+                    <Form.Label>MOTORISTA</Form.Label>
+
+                    <Field name="WorkerId">
+                      {({ field }) => (
+                        <Select
+                          {...field}
+                          inputId="WorkerId"
+                          className={
+                            errors.WorkerId && touched.WorkerId
+                              ? 'is-invalid'
+                              : null
+                          }
+                          options={workers
+                            .filter(
+                              (item) =>
+                                item.WorkerContracts[0].WorkerJobtypeId === 26
+                            )
+                            .map((item) => ({
+                              label: item.name,
+                              value: item.id,
+                            }))}
+                          value={workers
+                            .filter(
+                              (item) =>
+                                item.WorkerContracts[0].WorkerJobtypeId === 26
+                            )
+                            .map((item) => ({
+                              label: item.name,
+                              value: item.id,
+                            }))
+                            .find((item) => item.value === values.WorkerId)}
+                          onChange={(selectedOption) =>
+                            setFieldValue('WorkerId', selectedOption.value)
+                          }
+                        />
+                      )}
+                    </Field>
+                    <ErrorMessage
+                      name="WorkerId"
+                      component="div"
+                      className="invalid-feedback"
+                    />
+                  </Form.Group>
+
+                  <Form.Group
+                    controlId="hourmeter"
+                    as={Col}
+                    xs={12}
+                    md={5}
+                    className="pb-3"
+                  >
+                    <Form.Label>HORIMETRO</Form.Label>
+                    <Field
+                      type="number"
+                      as={Form.Control}
+                      // mask={Number}
+                      value={values.hourmeter}
+                      isInvalid={touched.hourmeter && !!errors.hourmeter}
+                      placeholder="100000"
+                      // onBlur={handleBlur}
+                      // onAccept={(value, mask) => {
+                      //   setFieldValue(mask.el.input.id, mask.unmaskedValue);
+                      // }}
+                    />
+                    <ErrorMessage
+                      name="hourmeter"
                       component="div"
                       className="invalid-feedback"
                     />

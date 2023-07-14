@@ -7,16 +7,17 @@ import {
   Row,
   Col,
   Button,
+  Badge,
   Form as BootstrapForm,
 } from 'react-bootstrap';
 import Select from 'react-select';
-// import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
+import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 // import { IMaskInput } from 'react-imask';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
-import { primaryDarkColor } from '../../../../config/colors';
+import { primaryDarkColor, body2Color } from '../../../../config/colors';
 import PreviewMultipleImages from '../../../../components/PreviewMultipleImages';
 
 const emptyValues = {
@@ -28,9 +29,15 @@ const emptyValues = {
   renavan: '',
   year: '',
   chassi: '',
+  payload: '',
+  weight: '',
+  fuelVolume: '',
+  peopleCapacity: '',
   obs: '',
   CartypeId: '',
   CarFueltypeId: '',
+  CarAccessories: [],
+  searchAccessory: '',
 };
 
 const validationSchema = Yup.object().shape({});
@@ -39,7 +46,9 @@ export default function CarOccurrence({ initialValues = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [fuelOptions, setFuelOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [categoryAccessory, setCategoryAccessory] = useState([]);
   const [files, setFiles] = useState([]);
+  const [openCollapse, setOpenCollapse] = useState(false);
 
   // const [workers, setWorkers] = useState([]);
   // const [cars, setCars] = useState([]);
@@ -51,8 +60,10 @@ export default function CarOccurrence({ initialValues = null }) {
         setIsLoading(true);
         const response = await axios.get('/cars/fuel');
         const response2 = await axios.get('/cars/types');
+        const response3 = await axios.get('/cars/accessories/types');
         setFuelOptions(response.data);
         setCategoryOptions(response2.data);
+        setCategoryAccessory(response3.data);
 
         setIsLoading(false);
       } catch (err) {
@@ -66,6 +77,52 @@ export default function CarOccurrence({ initialValues = null }) {
 
     getData();
   }, []);
+
+  const handleQuantityChange = (e, balance, handleChange) => {
+    // if (Number(e.target.value) > Number(balance)) {
+    //   toast.error('A reserva não pode superar o saldo do material');
+    //   e.target.value = Number(balance);
+    //   handleChange(e);
+    //   return;
+    // } //LIBERAR POR ENQUANTO QUE NAO TEM O SALDO INICIAL
+    if (e.target.value < 0) {
+      toast.error('A reserva não pode ser negativa');
+      e.target.value = 0;
+      handleChange(e);
+      return;
+    }
+    handleChange(e);
+  };
+
+  const handlePushItem = (push, row, list) => {
+    // não incluir repetido na lista
+    // console.log(row);
+    console.log(row.value);
+    // console.log(list);
+    if (list.length > 0) {
+      let exists = false;
+      console.log(1);
+      list.every((item) => {
+        if (item.CarAccessorytypeId === row.value.id) {
+          exists = true;
+          return false;
+        }
+        return true;
+      });
+
+      if (exists) {
+        toast.error('Acessório já incluído na lista');
+        return;
+      }
+    }
+
+    // adicionar na lista de saída
+    push({
+      // carId: row.id,
+      CarAccessorytypeId: row.value.id,
+      CarAccessorytypeType: row.value.type,
+    });
+  };
 
   const toFormData = ((f) => f(f))((h) => (f) => f((x) => h(h)(f)(x)))(
     (f) => (fd) => (pk) => (d) => {
@@ -119,13 +176,13 @@ export default function CarOccurrence({ initialValues = null }) {
             'Content-Type': 'multipart/form-data',
           },
         });
-        // for (const pair of formData.entries()) {
-        //   console.log(`${pair[0]} - ${pair[1]}`);
-        // }
+        // await axios.post(`/cars/accessories/`, formattedValues);
       } else {
         await axios.post(`/cars/`, formattedValues);
+        // await axios.post(`/cars/accessories/`, formattedValues);
       }
       setIsLoading(false);
+      setOpenCollapse(false);
       resetForm();
       toast.success('Veículo Cadastrado Com Sucesso!');
     } catch (err) {
@@ -391,7 +448,7 @@ export default function CarOccurrence({ initialValues = null }) {
                     </BootstrapForm.Group>
                     <BootstrapForm.Group
                       as={Col}
-                      xs={6}
+                      xs={12}
                       lg={3}
                       controlId="plate"
                       className="pb-3"
@@ -456,7 +513,7 @@ export default function CarOccurrence({ initialValues = null }) {
                     <BootstrapForm.Group
                       as={Col}
                       xs={12}
-                      lg={7}
+                      lg={4}
                       controlId="CarFueltypeId"
                       className="pb-3"
                     >
@@ -503,7 +560,7 @@ export default function CarOccurrence({ initialValues = null }) {
                     <BootstrapForm.Group
                       as={Col}
                       xs={12}
-                      lg={5}
+                      lg={4}
                       controlId="chassi"
                       className="pb-3"
                     >
@@ -519,7 +576,7 @@ export default function CarOccurrence({ initialValues = null }) {
                         }}
                         isInvalid={touched.chassi && !!errors.chassi}
                         isValid={touched.chassi && !errors.chassi}
-                        placeholder="BC1D23"
+                        placeholder="Insira o chassi"
                         onBlur={(e) => {
                           setFieldValue('chassi', e.target.value.toUpperCase()); // UPPERCASE
                           handleBlur(e);
@@ -531,7 +588,183 @@ export default function CarOccurrence({ initialValues = null }) {
                         className="invalid-feedback"
                       />
                     </BootstrapForm.Group>
+
+                    <BootstrapForm.Group
+                      as={Col}
+                      xs={12}
+                      lg={4}
+                      controlId="payload"
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>CARGA ÚTIL</BootstrapForm.Label>
+
+                      <Field
+                        type="text"
+                        name="payload"
+                        as={BootstrapForm.Control}
+                        value={values.payload}
+                        onChange={(e) => {
+                          handleChange(e);
+                        }}
+                        isInvalid={touched.payload && !!errors.payload}
+                        isValid={touched.payload && !errors.payload}
+                        placeholder="Carga do veículo"
+                        onBlur={(e) => {
+                          setFieldValue(
+                            'payload',
+                            e.target.value.toUpperCase()
+                          ); // UPPERCASE
+                          handleBlur(e);
+                        }}
+                      />
+                      <ErrorMessage
+                        name="payload"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
                   </Row>
+                  <Row className="d-flex justify-content-center align-items-top">
+                    <BootstrapForm.Group
+                      as={Col}
+                      xs={12}
+                      lg={6}
+                      controlId="weight"
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>
+                        PESO BRUTO TOTAL
+                      </BootstrapForm.Label>
+
+                      <Field
+                        type="text"
+                        name="weight"
+                        as={BootstrapForm.Control}
+                        value={values.weight}
+                        onChange={(e) => {
+                          handleChange(e);
+                        }}
+                        isInvalid={touched.weight && !!errors.weight}
+                        isValid={touched.weight && !errors.weight}
+                        placeholder="Peso do veículo"
+                        onBlur={(e) => {
+                          setFieldValue('weight', e.target.value.toUpperCase()); // UPPERCASE
+                          handleBlur(e);
+                        }}
+                      />
+                      <ErrorMessage
+                        name="weight"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+
+                    <BootstrapForm.Group
+                      as={Col}
+                      xs={12}
+                      lg={3}
+                      controlId="fuelVolume"
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>
+                        VOLUME DO TANQUE
+                      </BootstrapForm.Label>
+
+                      <Field
+                        type="text"
+                        name="fuelVolume"
+                        as={BootstrapForm.Control}
+                        value={values.fuelVolume}
+                        onChange={(e) => {
+                          handleChange(e);
+                        }}
+                        isInvalid={touched.fuelVolume && !!errors.fuelVolume}
+                        isValid={touched.fuelVolume && !errors.fuelVolume}
+                        placeholder="Nível total do tanque"
+                        onBlur={(e) => {
+                          setFieldValue(
+                            'fuelVolume',
+                            e.target.value.toUpperCase()
+                          ); // UPPERCASE
+                          handleBlur(e);
+                        }}
+                      />
+                      <ErrorMessage
+                        name="fuelVolume"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+                    <BootstrapForm.Group
+                      as={Col}
+                      xs={12}
+                      lg={3}
+                      controlId="peopleCapacity"
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>
+                        CAPACIDADE DE PESSOAS
+                      </BootstrapForm.Label>
+
+                      <Field
+                        type="text"
+                        name="peopleCapacity"
+                        as={BootstrapForm.Control}
+                        value={values.peopleCapacity}
+                        onChange={(e) => {
+                          handleChange(e);
+                        }}
+                        isInvalid={
+                          touched.peopleCapacity && !!errors.peopleCapacity
+                        }
+                        isValid={
+                          touched.peopleCapacity && !errors.peopleCapacity
+                        }
+                        placeholder=""
+                        onBlur={(e) => {
+                          setFieldValue(
+                            'peopleCapacity',
+                            e.target.value.toUpperCase()
+                          ); // UPPERCASE
+                          handleBlur(e);
+                        }}
+                      />
+                      <ErrorMessage
+                        name="peopleCapacity"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+                  </Row>
+
+                  {/* {openCollapse ? (
+                    <Col xs="auto" className="ps-1 pt-4">
+                      <Button
+                        type="submit"
+                        variant="success"
+                        // onClick={() => {
+                        //   if (
+                        //     !!values.reqMaintenance &&
+                        //     !errors.reqMaintenance
+                        //   ) {
+                        //     setOpenCollapse(!openCollapse);
+                        //     setFieldValue(
+                        //       'reqMaintenance',
+                        //       formatReq(values.reqMaintenance) // formatar o numero da requisicao
+                        //     );
+                        //     getReqMaterialsData(
+                        //       formatReq(values.reqMaintenance)
+                        //     );
+                        //   }
+                        // }}
+                        aria-controls="collapse-form"
+                        aria-expanded={openCollapse}
+                        className="mt-2"
+                      >
+                        <FaPlus />
+                      </Button>
+                    </Col>
+                  ) : null} */}
 
                   <Row className="d-flex justify-content-center align-items-top">
                     <BootstrapForm.Group
@@ -553,6 +786,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           setFieldValue('obs', e.target.value.toUpperCase()); // UPPERCASE
                           handleBlur(e);
                         }}
+                        readOnly={!!openCollapse}
                       />
                       <ErrorMessage
                         name="obs"
@@ -561,6 +795,222 @@ export default function CarOccurrence({ initialValues = null }) {
                       />
                     </BootstrapForm.Group>
                   </Row>
+
+                  <Row
+                    className="text-center"
+                    style={{ background: primaryDarkColor, color: 'white' }}
+                  >
+                    <span className="fs-6">LISTA DE ACESSÓRIOS</span>
+                  </Row>
+
+                  <FieldArray name="CarAccessories">
+                    {(fieldArrayProps) => {
+                      const { remove, push } = fieldArrayProps;
+                      return (
+                        <>
+                          <Row className="d-flex align-items-center pt-1 pb-1 mb-2 bg-white border-bottom">
+                            <Col sm="12" md="auto">
+                              PESQUISA RÁPIDA:
+                            </Col>
+                            <Col>
+                              {' '}
+                              <Select
+                                inputId="CarAccessorytypeId"
+                                options={categoryAccessory.map((item) => ({
+                                  value: item,
+                                  label: item.type,
+                                }))}
+                                value={values.CarAccessorytypeId}
+                                onChange={(selected, action) => {
+                                  handlePushItem(
+                                    push,
+                                    selected,
+                                    values.CarAccessories
+                                  );
+                                  setFieldValue('CarAccessorytypeId', '');
+                                }}
+                                placeholder="Selecione o Acessório"
+                                onBlur={() =>
+                                  setFieldValue('CarAccessorytypeId', '')
+                                }
+                                escapeClearsValue
+                                // filterOption={filterOptions}
+                              />
+                            </Col>
+                          </Row>
+                          <Row
+                            className="border-top"
+                            style={{ background: body2Color }}
+                          >
+                            {values.CarAccessories.length > 0 &&
+                              values.CarAccessories.map((item, index) => (
+                                <>
+                                  <Row className="d-block d-lg-none">
+                                    <Col className="fw-bold">
+                                      Item nº {index + 1}
+                                    </Col>
+                                  </Row>
+                                  <Row
+                                    key={item.CarAccessorytypeType}
+                                    className="d-flex p-0 m-0 border-bottom"
+                                  >
+                                    <BootstrapForm.Group
+                                      as={Col}
+                                      xs={12}
+                                      lg={3}
+                                      controlId={`CarAccessories[${index}].CarAccessorytypeType`}
+                                      className="border-0 m-0 p-0"
+                                    >
+                                      {index === 0 ? (
+                                        <BootstrapForm.Label className="d-flex ps-2 py-1 border-bottom d-none d-sm-none d-md-none d-lg-block">
+                                          ACESSÓRIO
+                                        </BootstrapForm.Label>
+                                      ) : null}
+                                      <div className="px-2">
+                                        {item.CarAccessorytypeType}
+                                      </div>
+                                    </BootstrapForm.Group>
+                                    {/* ////////////////////////////////////////////////////////////////////////////////////// */}
+                                    <Col
+                                      xs={12}
+                                      lg={9}
+                                      className="d-flex justify-content-between"
+                                    >
+                                      <BootstrapForm.Group
+                                        as={Col}
+                                        xs={10}
+                                        sm={3}
+                                        md="auto"
+                                        controlId={`CarAccessories[${index}].payload`}
+                                        className="border-0 m-0 p-0"
+                                        // style={{ width: '70px' }}
+                                      >
+                                        {index === 0 ? (
+                                          <BootstrapForm.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block text-center">
+                                            CAPACIDADE DE CARGA
+                                          </BootstrapForm.Label>
+                                        ) : null}
+                                        <BootstrapForm.Control
+                                          type="string"
+                                          plaintext
+                                          value={item.payload}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          placeholder="Carga suportada"
+                                          size="sm"
+                                          className="p-0 m-0 ps-2 pe-2 text-end"
+                                          step="any"
+                                        />
+                                      </BootstrapForm.Group>
+
+                                      <BootstrapForm.Group
+                                        as={Col}
+                                        xs={10}
+                                        sm={3}
+                                        md="auto"
+                                        controlId={`CarAccessories[${index}].dimension`}
+                                        className="border-0 m-0 p-0"
+                                        // style={{ width: '70px' }}
+                                      >
+                                        {index === 0 ? (
+                                          <BootstrapForm.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block text-center">
+                                            TAMANHO
+                                          </BootstrapForm.Label>
+                                        ) : null}
+                                        <BootstrapForm.Control
+                                          type="string"
+                                          plaintext
+                                          value={item.dimension}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          placeholder="Tamanho do acessório"
+                                          size="sm"
+                                          className="p-0 m-0 ps-2 pe-2 text-end"
+                                          step="any"
+                                        />
+                                      </BootstrapForm.Group>
+
+                                      <BootstrapForm.Group
+                                        as={Col}
+                                        xs={10}
+                                        sm={4}
+                                        md="auto"
+                                        controlId={`CarAccessories[${index}].obs`}
+                                        className="border-0 m-0 p-0"
+                                        // style={{ width: '70px' }}
+                                      >
+                                        {index === 0 ? (
+                                          <BootstrapForm.Label className="d-flex ps-2 py-1 border-bottom d-none d-lg-block text-center">
+                                            OBSERVAÇÃO
+                                          </BootstrapForm.Label>
+                                        ) : null}
+                                        <BootstrapForm.Control
+                                          type="text"
+                                          plaintext
+                                          value={item.obs}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          placeholder="Observações"
+                                          size="sm"
+                                          className="p-0 m-0 ps-2 pe-2 text-end"
+                                          step="any"
+                                        />
+                                      </BootstrapForm.Group>
+                                      <Col
+                                        as={Col}
+                                        xs="2"
+                                        sm="auto"
+                                        className="border-0 m-0 p-0 text-center"
+                                      >
+                                        {index === 0 ? (
+                                          <Row>
+                                            <Col xs="auto" className="d-flex">
+                                              <div
+                                                className="d-none d-lg-block"
+                                                style={{
+                                                  width: '6px',
+                                                  height: '34px',
+                                                }}
+                                              />
+                                            </Col>
+                                          </Row>
+                                        ) : null}
+                                        <Row>
+                                          <Col xs="auto">
+                                            <Button
+                                              onClick={() => remove(index)}
+                                              variant="outline-danger"
+                                              size="sm"
+                                              className="border-0"
+                                              tabindex="-1"
+                                            >
+                                              <FaTrashAlt size={18} />
+                                            </Button>
+                                          </Col>
+                                        </Row>
+                                      </Col>
+                                    </Col>
+                                  </Row>
+                                </>
+                              ))}
+                          </Row>
+                        </>
+                      );
+                    }}
+                  </FieldArray>
+                  {/* <Row className="pt-4">
+                    <Col xs="auto">
+                      {touched.MaterialReserveItems &&
+                      typeof errors.MaterialReserveItems === 'string' ? (
+                        <Badge bg="danger">{errors.MaterialReserveItems}</Badge>
+                      ) : touched.MaterialReserveItems &&
+                        errors.MaterialReserveItems ? (
+                        <Badge bg="danger">
+                          A quantidade de item não pode ser 0.
+                        </Badge>
+                      ) : null}
+                    </Col>
+                  </Row> */}
 
                   <Row
                     className="text-center mt-3"

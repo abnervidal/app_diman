@@ -13,7 +13,7 @@ import {
 import Select from 'react-select';
 import { FaPhone, FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-
+import { useSelector } from 'react-redux';
 import axios from '../../../../services/axios';
 import Loading from '../../../../components/Loading';
 import { primaryDarkColor } from '../../../../config/colors';
@@ -37,6 +37,7 @@ const validationSchema = Yup.object().shape({
 });
 
 export default function CarOccurrence({ initialValues = null }) {
+  const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
   const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
@@ -102,6 +103,8 @@ export default function CarOccurrence({ initialValues = null }) {
         delete formattedValues[key];
       }
     }); // LIMPANDO CHAVES `EMPTY STRINGS`
+
+    formattedValues.UserId = userId;
 
     let formData;
     if (files.length > 0) {

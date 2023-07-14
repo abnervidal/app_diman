@@ -22,8 +22,10 @@ import PreviewMultipleImages from '../../../../components/PreviewMultipleImages'
 
 const emptyValues = {
   CarId: '',
+  WorkerId: '',
   milage: '',
   date: '',
+  hourmeter: '',
   internal: '',
   external: '',
   obs: '',
@@ -43,6 +45,7 @@ const validationSchema = Yup.object().shape({
 export default function CarInspection({ initialValues = null }) {
   const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
+  const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
   const [files, setFiles] = useState([]);
 
@@ -53,7 +56,9 @@ export default function CarInspection({ initialValues = null }) {
       try {
         setIsLoading(true);
         const response = await axios.get('/cars/');
+        const response2 = await axios.get('/workers/actives/');
         setCars(response.data);
+        setWorkers(response2.data);
         setIsLoading(false);
         console.log(2);
       } catch (err) {
@@ -270,6 +275,86 @@ export default function CarInspection({ initialValues = null }) {
                       />
                       <ErrorMessage
                         name="date"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+                  </Row>
+
+                  <Row className="d-flex justify-content-center align-items-top">
+                    <BootstrapForm.Group
+                      controlId="WorkerId"
+                      as={Col}
+                      xs={12}
+                      md={7}
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
+
+                      <Field name="WorkerId">
+                        {({ field }) => (
+                          <Select
+                            {...field}
+                            inputId="WorkerId"
+                            className={
+                              errors.WorkerId && touched.WorkerId
+                                ? 'is-invalid'
+                                : null
+                            }
+                            options={workers
+                              .filter(
+                                (item) =>
+                                  item.WorkerContracts[0].WorkerJobtypeId === 26
+                              )
+                              .map((item) => ({
+                                label: item.name,
+                                value: item.id,
+                              }))}
+                            value={workers
+                              .filter(
+                                (item) =>
+                                  item.WorkerContracts[0].WorkerJobtypeId === 26
+                              )
+                              .map((item) => ({
+                                label: item.name,
+                                value: item.id,
+                              }))
+                              .find((item) => item.value === values.WorkerId)}
+                            onChange={(selectedOption) =>
+                              setFieldValue('WorkerId', selectedOption.value)
+                            }
+                          />
+                        )}
+                      </Field>
+                      <ErrorMessage
+                        name="WorkerId"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </BootstrapForm.Group>
+
+                    <BootstrapForm.Group
+                      controlId="hourmeter"
+                      as={Col}
+                      xs={12}
+                      md={5}
+                      className="pb-3"
+                    >
+                      <BootstrapForm.Label>HORIMETRO</BootstrapForm.Label>
+                      <Field
+                        type="number"
+                        as={BootstrapForm.Control}
+                        // mask={Number}
+                        value={values.hourmeter}
+                        isInvalid={touched.hourmeter && !!errors.hourmeter}
+                        placeholder="100000"
+                        // onBlur={handleBlur}
+                        // onAccept={(value, mask) => {
+                        //   setFieldValue(mask.el.input.id, mask.unmaskedValue);
+                        // }}
+                      />
+                      <ErrorMessage
+                        name="hourmeter"
                         component="div"
                         className="invalid-feedback"
                       />

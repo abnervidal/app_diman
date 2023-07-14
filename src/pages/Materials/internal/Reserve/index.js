@@ -87,6 +87,7 @@ export default function Index() {
     // não incluir repetido na lista
     // console.log(row);
     // console.log(list);
+    console.log(row.value);
     if (list.length > 0) {
       let exists = false;
 
@@ -852,6 +853,7 @@ export default function Index() {
                         ) : null}
                       </Col>
                     </Row>
+
                     <Row>
                       <Col xs="auto" className="text-center py-2">
                         <Button
