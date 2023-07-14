@@ -306,7 +306,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                         setFieldValue('brand', e.target.value.toUpperCase()); // UPPERCASE
                         handleBlur(e);
                       }}
-                      isDisabled
+                      disabled
                     />
                     <ErrorMessage
                       name="brand"
