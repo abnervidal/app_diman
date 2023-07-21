@@ -41,7 +41,6 @@ export default function Index({ data, handleCancelModal, handleSaveModal }) {
   // const [contacttypes, setContacttypes] = useState([]);
   const [jobtypes, setJobtypes] = useState([]);
   const [contracts, setContracts] = useState([]);
-  const [unidades, setUnidades] = useState([]);
   const [contractsDangers, setContractsDangers] = useState([]);
   const [contractsRegimes, setContractsRegimes] = useState([]);
   const [contractsUnhealthies, setContractsUnhealthies] = useState([]);
@@ -165,7 +164,6 @@ export default function Index({ data, handleCancelModal, handleSaveModal }) {
 
         const responseContract = await axios.get(`/workers/contracts`);
         const responseJob = await axios.get(`/workers/jobtypes`);
-        const responseUnidades = await axios.get(`/unidades`);
         const responseDangers = await axios.get(`/workers/contract/dangers`);
         const responseRegimes = await axios.get(`/workers/contract/regimes`);
         const responseUnhealthies = await axios.get(
@@ -174,7 +172,6 @@ export default function Index({ data, handleCancelModal, handleSaveModal }) {
 
         setContracts(responseContract.data);
         setJobtypes(responseJob.data);
-        setUnidades(responseUnidades.data);
         setContractsDangers(responseDangers.data);
         setContractsRegimes(responseRegimes.data);
         setContractsUnhealthies(responseUnhealthies.data);
@@ -888,20 +885,31 @@ export default function Index({ data, handleCancelModal, handleSaveModal }) {
                                           <option>
                                             Selecione a unidade de lotação
                                           </option>
-                                          {unidades.map((unidade) => (
-                                            <option
-                                              key={unidade.id}
-                                              value={unidade.id}
-                                            >
-                                              {unidade.id} |{' '}
-                                              {unidade.nomeUnidade.slice(
-                                                0,
-                                                unidade.nomeUnidade.length < 60
-                                                  ? unidade.nomeUnidade.length
-                                                  : 60
-                                              )}
-                                            </option>
-                                          ))}
+                                          {contracts
+                                            .find(
+                                              (contract) =>
+                                                String(contract.id) ===
+                                                String(
+                                                  values.WorkerContracts[index]
+                                                    .ContractId
+                                                )
+                                            )
+                                            ?.ContractUnidades?.map((i) => (
+                                              <option
+                                                key={i.UnidadeSipacId}
+                                                value={i.UnidadeSipacId}
+                                              >
+                                                {i.UnidadeSipacId} |{' '}
+                                                {i.Unidade.nomeUnidade.slice(
+                                                  0,
+                                                  i.Unidade.nomeUnidade.length <
+                                                    60
+                                                    ? i.Unidade.nomeUnidade
+                                                        .length
+                                                    : 60
+                                                )}
+                                              </option>
+                                            ))}
                                         </Form.Select>
                                       </Form.Group>
                                       <Form.Group

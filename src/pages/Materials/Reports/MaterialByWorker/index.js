@@ -375,52 +375,9 @@ export default function Index() {
     try {
       setIsLoading(true);
 
-      const response = await axios.get(`/materials/itemsworkers${queryString}`);
-
-      response.data.forEach((material, index) => {
-        // show differents workers for each material
-        const workersList = material.MaterialOutItems.map((item) => ({
-          WorkerId: item.MaterialOut.workerId,
-          name: item.MaterialOut.Worker.name,
-        }));
-
-        material.Workers = workersList.reduce((acc, current) => {
-          const x = acc.find((item) => item.WorkerId === current.WorkerId);
-          if (!x) {
-            return acc.concat([current]);
-          }
-          return acc;
-        }, []);
-      });
-
-      response.data.forEach((material) => {
-        material.Workers.forEach((worker) => {
-          worker.materialsOutItems = material.MaterialOutItems.filter(
-            (item) => item.MaterialOut.workerId === worker.WorkerId
-          );
-
-          // getting total out
-          worker.materialsOutItemsTotal = worker.materialsOutItems.reduce(
-            (acc, current) => acc + current.quantity,
-            0
-          );
-
-          worker.materialsInItems = material.MaterialInItems.filter(
-            (item) =>
-              item.MaterialIn.MaterialReturned.workerId === worker.WorkerId
-          );
-
-          // getting total in
-          worker.materialsInItemsTotal = worker.materialsInItems.reduce(
-            (acc, current) => acc + current.quantity,
-            0
-          );
-
-          // getting total effective
-          worker.materialsEffectiveItemsTotal =
-            worker.materialsOutItemsTotal - worker.materialsInItemsTotal;
-        });
-      });
+      const response = await axios.get(
+        `/materials/itemsbyworkers${queryString}`
+      );
 
       setData(response.data);
       setIsLoading(false);
@@ -458,116 +415,68 @@ export default function Index() {
           </span>
         ),
       },
+      // {
+      //   Header: 'ID',
+      //   accessor: 'id',
+      //   width: 130,
+      //   disableResizing: true,
+      //   disableSortBy: true,
+      //   Filter: InputColumnFilter,
+      //   filter: 'text',
+      // },
       {
-        Header: 'ID',
-        accessor: 'id',
-        width: 130,
-        disableResizing: true,
-        disableSortBy: true,
-        Filter: InputColumnFilter,
-        filter: 'text',
-      },
-      {
-        Header: 'Descrição',
+        Header: 'Nome',
         accessor: 'name',
-        disableSortBy: true,
-        Filter: InputColumnFilter,
-        filter: 'text',
-      },
-      {
-        Header: 'Unidade',
-        accessor: 'unit',
-        width: 120,
-        disableResizing: true,
-        disableSortBy: true,
-        Filter: SelectColumnFilter,
-        filter: 'includes',
-      },
-      {
-        Header: 'Saída (Uso)',
-        accessor: (originalRow) =>
-          originalRow.Workers.reduce(
-            (acc, current) => acc + current.materialsOutItemsTotal,
-            0
-          ),
-        width: 120,
-        disableResizing: true,
-        disableSortBy: true,
-      },
-      {
-        Header: 'Retorno',
-        accessor: (originalRow) =>
-          originalRow.Workers.reduce(
-            (acc, current) => acc + current.materialsInItemsTotal,
-            0
-          ),
-        width: 120,
-        disableResizing: true,
-        disableSortBy: true,
-      },
-      {
-        Header: 'Uso efetivo',
-        accessor: (originalRow) =>
-          originalRow.Workers.reduce(
-            (acc, current) => acc + current.materialsEffectiveItemsTotal,
-            0
-          ),
-        width: 120,
-        disableResizing: true,
-        disableSortBy: true,
+        isVisible: window.innerWidth > 768,
       },
       // {
-      //   Header: () => <div className="p-auto text-center">Recebimento</div>,
-      //   accessor: 'createdAt',
+      //   Header: 'Descrição',
+      //   accessor: 'name',
+      //   disableSortBy: true,
+      //   Filter: InputColumnFilter,
+      //   filter: 'text',
+      // },
+      // {
+      //   Header: 'Unidade',
+      //   accessor: 'unit',
       //   width: 120,
       //   disableResizing: true,
-      //   disableSortBy: true,
-      //   Cell: ({ value }) => <div className="p-auto text-center">{value}</div>,
-      //   Filter: InputDateColumnFilter,
-      //   filter: 'rangeDate',
-      // },
-      // {
-      //   Header: () => <div className="p-auto text-center">Conferente</div>,
-      //   accessor: 'receivedBy',
-      //   width: 150,
-      //   disableResizing: true,
-      //   Cell: (props) => {
-      //     const custom = String(props.value).replace(
-      //       /(^[a-z]*)\.([a-z]*).*/gm,
-      //       '$1.$2'
-      //     ); // deixar só os dois primeiros nomes
-      //     return <span> {custom}</span>;
-      //   },
-      //   disableSortBy: true,
-      //   Cell: ({ value }) => <div className="p-auto text-center">{value}</div>,
-      // Filter: SelectColumnFilter,
-      // filter: 'includes',
-      // },
-      // {
-      //   Header: () => <div className="p-auto text-center">Usuário Pedido</div>,
-      //   accessor: 'requiredBy',
-      //   width: 150,
-      //   disableResizing: true,
-      //   Cell: (props) => {
-      //     const custom = String(props.value).replace(
-      //       /(^[a-z]*)\.([a-z]*).*/gm,
-      //       '$1.$2'
-      //     ); // deixar só os dois primeiros nomes
-      //     return <div className="p-auto text-center"> {custom}</div>;
-      //   },
       //   disableSortBy: true,
       //   Filter: SelectColumnFilter,
       //   filter: 'includes',
       // },
       // {
-      //   Header: () => <div className="p-auto text-center">Data pedido</div>,
-      //   accessor: 'registerDate',
+      //   Header: 'Saída (Uso)',
+      //   accessor: (originalRow) =>
+      //     originalRow.Workers.reduce(
+      //       (acc, current) => acc + current.materialsOutItemsTotal,
+      //       0
+      //     ),
       //   width: 120,
       //   disableResizing: true,
       //   disableSortBy: true,
-      //   Cell: ({ value }) => <div className="p-auto text-center">{value}</div>,
-      //   Filter: InputDateColumnFilter,
-      //   filter: 'rangeDate',
+      // },
+      // {
+      //   Header: 'Retorno',
+      //   accessor: (originalRow) =>
+      //     originalRow.Workers.reduce(
+      //       (acc, current) => acc + current.materialsInItemsTotal,
+      //       0
+      //     ),
+      //   width: 120,
+      //   disableResizing: true,
+      //   disableSortBy: true,
+      // },
+      // {
+      //   Header: 'Uso efetivo',
+      //   accessor: (originalRow) =>
+      //     originalRow.Workers.reduce(
+      //       (acc, current) => acc + current.materialsEffectiveItemsTotal,
+      //       0
+      //     ),
+      //   width: 120,
+      //   disableResizing: true,
+      //   disableSortBy: true,
       // },
     ],
     []
@@ -632,18 +541,6 @@ export default function Index() {
                   }, true);
                 return ac;
               }, false);
-
-              // return arrayFilterSub.reduce((res, cur) => {
-              //   // res -> response; cur -> currency (atual)
-              //   res =
-              //     res &&
-              //     String(materials[0].name)
-              //       .toLowerCase()
-              //       .includes(String(cur).toLowerCase());
-              //   return res;
-              // }, true);
-
-              // return true;
             }
 
             return arrayFilter.reduce((res, cur) => {
@@ -1153,9 +1050,12 @@ export default function Index() {
       <Container>
         <Row className="text-center py-3">
           <Card.Title>
-            Relatório de Consumo: Materiais por Colaborador
+            Relatório de Consumo: Material por Colaborador
           </Card.Title>
-          <Card.Text>Usos e retornos de materiais por colaborador</Card.Text>
+          <Card.Text>
+            Usos e retornos referentes a todos os materiais por determinados
+            colaboradores
+          </Card.Text>
         </Row>
 
         <TableGfilterNestedRowHiddenRows

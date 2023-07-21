@@ -61,9 +61,17 @@ export default function index() {
             <Nav.Item>
               <Link
                 className="text-decoration-none"
-                to="/materials/reports/materialworker"
+                to="/materials/reports/workerbymaterial"
               >
-                <Nav.Link href="#7">Material x Colaborador</Nav.Link>
+                <Nav.Link href="#7">Colaborador p/ Material</Nav.Link>
+              </Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Link
+                className="text-decoration-none"
+                to="/materials/reports/materialbyworker"
+              >
+                <Nav.Link href="#8">Material p/ Colaborador</Nav.Link>
               </Link>
             </Nav.Item>
           </Nav>
