@@ -27,6 +27,23 @@ import Loading from '../../../../components/Loading';
 // import generic table from material's components with global filter and nested row
 import TableGfilterNestedRowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import TableNestedrow from '../../components/TableNestedRow';
+import FilterDate from './components/FilterDate';
+
+function objectToQueryString(obj) {
+  const queryString = Object.entries(obj)
+    .map(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value
+          .map(
+            (val) => `${encodeURIComponent(key)}[]=${encodeURIComponent(val)}`
+          )
+          .join('&');
+      }
+      return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    })
+    .join('&');
+  return queryString;
+}
 
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>
@@ -90,10 +107,12 @@ export default function Index() {
   const [showModalRes, setShowModalRes] = useState(false);
   const [reqInModal, setReqInModal] = useState('');
 
-  async function getData() {
+  async function getData(values) {
     try {
       setIsLoading(true);
-      const response = await axios.get('/materials/in/rl');
+      const queryString = objectToQueryString(values);
+
+      const response = await axios.get(`/materials/in/rl?${queryString}`);
       setReqs(response.data);
       setIsLoading(false);
     } catch (err) {
@@ -104,9 +123,10 @@ export default function Index() {
       setIsLoading(false);
     }
   }
-  useEffect(() => {
-    getData();
-  }, []);
+
+  // useEffect(() => {
+  //   getData();
+  // }, []);
 
   const handleCancelModal = () => {
     setShowModalRel(false);
@@ -627,6 +647,7 @@ export default function Index() {
     <>
       <Loading isLoading={isLoading} />
       <Container>
+        <FilterDate getData={getData} />
         <ReleaseItemsModal // modal p/ liberação de materiais
           handleCancelModal={handleCancelModal}
           handleClose={handleCloseModalRel}
