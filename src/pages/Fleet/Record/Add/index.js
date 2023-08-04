@@ -188,9 +188,9 @@ export default function Car({ data = null }) {
     if (isEditMode) {
       addList = [
         ...formattedValues.CarAccessories.filter(
-          (item) =>
+          (initialItem) =>
             !initialValues.CarAccessories.some(
-              (initialItem) =>
+              (item) =>
                 initialItem.CarAccessorytypeId === item.CarAccessorytypeId
             )
         ),
@@ -199,9 +199,9 @@ export default function Car({ data = null }) {
       addList.forEach((item) => (item.CarId = formattedValues.id));
 
       deleteList = [
-        ...formattedValues.CarAccessories.filter(
+        ...initialValues.CarAccessories.filter(
           (initialItem) =>
-            !initialValues.CarAccessories.some(
+            !formattedValues.CarAccessories.some(
               (item) =>
                 initialItem.CarAccessorytypeId === item.CarAccessorytypeId
             )
@@ -222,17 +222,20 @@ export default function Car({ data = null }) {
 
     try {
       setIsLoading(true);
-      console.log(values);
+      console.log('add:', addList);
+      console.log('update:', updateList);
+      console.log('delete:', deleteList);
       if (isEditMode) {
+        console.log(initialValues);
         await axios.put(`/cars/${initialValues.id}`, formattedValues);
         if (deleteList.length > 0)
-          await axios.delete(`/cars/accessories/`, {
+          await axios.delete(`/cars/accessories/${deleteList.id}`, {
             data: deleteList,
           });
 
         // ADD AND UPDATE DATA
         const AddANDUpdateList = [...addList, ...updateList];
-        console.log(AddANDUpdateList);
+        console.log('lista', AddANDUpdateList);
         if (AddANDUpdateList.length > 0)
           await axios.post(`/cars/accessories/`, AddANDUpdateList);
 
