@@ -27,15 +27,15 @@ const formatGroupLabel = (data) => (
 );
 
 export default function EditModal({ show, handleClose, data, handleSave }) {
+  const userId = useSelector((state) => state.auth.user.id);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef();
 
-  const { obs, CarStatustypeId, CarId, UserId } = data;
+  const { obs, CarStatustypeId, CarId } = data;
 
   const initialValues = {
     CarId,
-    UserId,
     CarStatustypeId,
     obs,
   };
@@ -80,7 +80,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
     }); // LIMPANDO CHAVES `EMPTY STRINGS`
 
     formattedValues.CarId = data.id;
-    formattedValues.UserId = UserId;
+    formattedValues.UserId = userId;
     // formattedValues.workerId = formattedValues.workerId?.value;
     // formattedValues.authorizedBy = formattedValues.authorizedBy?.value;
     // formattedValues.propertyId = formattedValues.propertyId?.value;
@@ -93,7 +93,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
       await axios.post(`/cars/statuses/`, formattedValues);
 
       setIsLoading(false);
-      toast.success(`Edição realizada com sucesso`);
+      toast.success(`Status atualizado com sucesso`);
 
       handleSave();
     } catch (err) {
@@ -125,7 +125,12 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
           </span>
         </Row>
         <Row className="px-0 pt-2">
-          {JSON.stringify(data)}
+          <Form.Label>
+            VEÍCULO: {data.brand} {data.model} - {data.color} {data.plate}
+          </Form.Label>
+        </Row>
+        <Row className="px-0 pt-2">
+          {/* {JSON.stringify(data)} */}
           <Formik
             initialValues={initialValues}
             validationSchema={schema}
@@ -153,7 +158,7 @@ export default function EditModal({ show, handleClose, data, handleSave }) {
                     controlId="CarStatustypeId"
                     className="pb-3"
                   >
-                    <Form.Label>COMBUSTÍVEL</Form.Label>
+                    <Form.Label>STATUS DO CARRO</Form.Label>
 
                     <Field name="CarStatustypeId">
                       {({ field }) => (

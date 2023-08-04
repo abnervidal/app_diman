@@ -29,7 +29,6 @@ import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
 import TableGfilterNestedRowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import EditModal from '../../components/EditModal';
-import EditModalAccessory from '../../components/EditModalAccessory';
 import EditModalStatus from '../../components/EditModalStatus';
 
 const renderTooltip = (props, message) => (
@@ -37,6 +36,23 @@ const renderTooltip = (props, message) => (
     {message}
   </Tooltip>
 );
+
+const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
+  <Button
+    href=""
+    size="sm"
+    variant="outline-primary"
+    className="border-0 m-0"
+    ref={ref}
+    onClick={(e) => {
+      e.preventDefault();
+      onClick(e);
+    }}
+  >
+    {children}
+    {/* &#x25bc; */}
+  </Button>
+));
 
 // trigger to custom filter
 function DefaultColumnFilter() {
@@ -156,10 +172,8 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [cars, setCars] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showEditModalAccessory, setShowEditModalAccessory] = useState(false);
   const [showEditModalStatus, setShowEditModalStatus] = useState(false);
   const [dataModal, setDataModal] = useState('');
-  const [dataModalAccessory, setDataModalAccessory] = useState('');
   const [dataModalStatus, setDataModalStatus] = useState('');
 
   async function getData() {
@@ -179,17 +193,12 @@ export default function Index() {
 
   const handleCloseEditModal = () => setShowEditModal(false);
   const handleCloseEditModalStatus = () => setShowEditModalStatus(false);
-  const handleCloseEditModalAccessory = () => setShowEditModalAccessory(false);
   const handleSaveEditModal = () => {
     setShowEditModal(false);
     getData();
   };
   const handleSaveEditModalStatus = () => {
     setShowEditModalStatus(false);
-    getData();
-  };
-  const handleSaveEditModalAccessory = () => {
-    setShowEditModalAccessory(false);
     getData();
   };
   const handleShowEditModal = (data) => {
@@ -199,10 +208,6 @@ export default function Index() {
   const handleShowEditModalStatus = (data) => {
     setDataModalStatus(data);
     setShowEditModalStatus(true);
-  };
-  const handleShowEditModalAccessory = (data) => {
-    setDataModalAccessory(data);
-    setShowEditModalAccessory(true);
   };
 
   useEffect(() => {
@@ -301,11 +306,14 @@ export default function Index() {
         Header: 'Combustível',
         accessor: (originalRow) => originalRow.CarFueltype?.type,
         disableSortBy: true,
-        width: 100,
+        width: 120,
       },
       {
         Header: 'Status',
-        id: (originalRow) => originalRow.CarStatuses?.CarStatustypeId.type,
+        id: 'Satus',
+        accessor: (originalRow) =>
+          originalRow.CarStatuses[originalRow.CarStatuses.length - 1]
+            ?.CarStatustype.type,
         width: 140,
         disableResizing: true,
 
@@ -313,6 +321,7 @@ export default function Index() {
         Filter: SelectColumnFilterStatus,
         filter: 'groupStatus',
         isVisible: window.innerWidth > 768,
+        disableSortBy: true,
       },
       {
         Header: 'Ações',
@@ -331,7 +340,10 @@ export default function Index() {
                 overlay={(props) => renderTooltip(props, 'Opções')}
               >
                 <Dropdown>
-                  <Dropdown.Toggle id="dropdown-basic">
+                  <Dropdown.Toggle
+                    as={CustomToggle}
+                    id="dropdown-custom-components"
+                  >
                     <FaEllipsisH />
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
@@ -346,12 +358,6 @@ export default function Index() {
                       onClick={() => handleShowEditModalStatus(row.original)}
                     >
                       Editar Status
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                      eventKey="2"
-                      onClick={() => handleShowEditModalAccessory(row.original)}
-                    >
-                      Editar Acessório
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -436,6 +442,7 @@ export default function Index() {
           <Col>
             {' '}
             <Badge>DEMAIS INFORMAÇÕES SOBRE O VEÍCULO</Badge>
+            {/* {JSON.stringify(row.original.CarStatuses)} */}
           </Col>
         </Row>
         <Row>
@@ -533,7 +540,7 @@ export default function Index() {
                 <Row>
                   <Col className="text-center">
                     <span className="text-center fw-bold">ACESSÓRIOS</span>
-                    {JSON.stringify(row.original.CarAccessories)}
+                    {/* {JSON.stringify(row.original.CarAccessories)} */}
                   </Col>
                 </Row>
                 <TableNestedrow
@@ -541,8 +548,9 @@ export default function Index() {
                   columns={[
                     {
                       Header: 'Acessório',
-                      accessor: (originalRow) => originalRow.CarAccessorytypeId,
-                      width: 120,
+                      accessor: (originalRow) =>
+                        originalRow.CarAccessorytype.type,
+                      width: 200,
                       disableResizing: true,
                       disableSortBy: true,
                     },
@@ -630,12 +638,6 @@ export default function Index() {
         show={showEditModal}
         data={dataModal}
         handleSave={handleSaveEditModal}
-      />
-      <EditModalAccessory // modal p/ pesquisa de materiais
-        handleClose={handleCloseEditModalAccessory}
-        show={showEditModalAccessory}
-        data={dataModalAccessory}
-        handleSave={handleSaveEditModalAccessory}
       />
       <EditModalStatus // modal p/ pesquisa de materiais
         handleClose={handleCloseEditModalStatus}

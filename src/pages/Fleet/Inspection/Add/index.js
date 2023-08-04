@@ -38,16 +38,20 @@ const riskOptions = [
 ];
 
 const validationSchema = Yup.object().shape({
-  // CarId: Yup.number().required('Necessário selecionar o veículo!'),
-  // date: Yup.date().required('Necessário selecionar a data da ocorrência!'),
+  CarId: Yup.number().required('Necessário selecionar o veículo!'),
+  WorkerId: Yup.number().required('Necessário selecionar o motorista!'),
+  milage: Yup.number().required('Necessário inserir a quilometragem!'),
+  date: Yup.date().required('Necessário selecionar a data da vistoria!'),
 });
 
-export default function CarInspection({ initialValues = null }) {
+export default function CarInspection({ data = null }) {
   const userId = useSelector((state) => state.auth.user.id);
+  // const [initialData, setInitialData] = useState(emptyValues);
   const [isLoading, setIsLoading] = useState(false);
   const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
   const [files, setFiles] = useState([]);
+  const [initialValues, setInitialValues] = useState(data);
 
   const isEditMode = !!initialValues;
 
@@ -119,25 +123,28 @@ export default function CarInspection({ initialValues = null }) {
 
     try {
       setIsLoading(true);
-      if (files.length > 0) {
-        await axios.post(`/cars/inspections`, formData, {
+      if (isEditMode) {
+        await axios.put(`/cars/inspections/${formattedValues.id}`, values);
+        setIsLoading(false);
+        toast.success(`Edição realizada com sucesso`);
+      } else if (files.length > 0) {
+        await axios.post(`/cars/inspections/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        // for (const pair of formData.entries()) {
-        //   console.log(`${pair[0]} - ${pair[1]}`);
-        // }
+        setFiles([]);
+        resetForm();
+        toast.success('Vistoria Cadastrada Com Sucesso!');
       } else {
         await axios.post(`/cars/inspections`, formattedValues);
+        resetForm();
+        toast.success('Vistoria Cadastrada Com Sucesso!');
       }
       setIsLoading(false);
-      setFiles([]);
-      resetForm();
-      toast.success('Vistoria Cadastrada Com Sucesso!');
     } catch (err) {
       setIsLoading(true);
-      console.log(values);
+      // console.log(values);
       // eslint-disable-next-line no-unused-expressions
       err.response?.data?.errors
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
@@ -162,7 +169,9 @@ export default function CarInspection({ initialValues = null }) {
               className=" text-center"
               style={{ background: primaryDarkColor, color: 'white' }}
             >
-              <span className="fs-5">CADASTRAR VISTORIA</span>
+              <span className="fs-5">
+                {isEditMode ? 'EDITAR' : 'CADASTRAR'} VISTORIA
+              </span>
             </Col>
           </Row>
           <Row className="pt-2">
@@ -199,6 +208,7 @@ export default function CarInspection({ initialValues = null }) {
                         {({ field }) => (
                           <Select
                             {...field}
+                            inputId="CarId"
                             className={
                               errors.CarId && touched.CarId
                                 ? 'is-invalid'
@@ -221,6 +231,7 @@ export default function CarInspection({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="CarId"
                         component="div"
@@ -235,6 +246,7 @@ export default function CarInspection({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>QUILOMETRAGEM</BootstrapForm.Label>
+
                       <Field
                         type="number"
                         as={BootstrapForm.Control}
@@ -247,6 +259,7 @@ export default function CarInspection({ initialValues = null }) {
                         //   setFieldValue(mask.el.input.id, mask.unmaskedValue);
                         // }}
                       />
+
                       <ErrorMessage
                         name="milage"
                         component="div"
@@ -263,6 +276,7 @@ export default function CarInspection({ initialValues = null }) {
                       <BootstrapForm.Label>
                         DATA DA VISTORIA
                       </BootstrapForm.Label>
+
                       <Field
                         xs={6}
                         className={
@@ -271,8 +285,10 @@ export default function CarInspection({ initialValues = null }) {
                         type="date"
                         name="date"
                         as={BootstrapForm.Control}
-                        placeholder="Código"
+                        placeholder="Data"
+                        // disabled={isEditMode.current}
                       />
+
                       <ErrorMessage
                         name="date"
                         component="div"
@@ -290,7 +306,6 @@ export default function CarInspection({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>MOTORISTA</BootstrapForm.Label>
-
                       <Field name="WorkerId">
                         {({ field }) => (
                           <Select
@@ -326,6 +341,7 @@ export default function CarInspection({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="WorkerId"
                         component="div"
@@ -341,6 +357,7 @@ export default function CarInspection({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>HORIMETRO</BootstrapForm.Label>
+
                       <Field
                         type="number"
                         as={BootstrapForm.Control}
@@ -353,6 +370,7 @@ export default function CarInspection({ initialValues = null }) {
                         //   setFieldValue(mask.el.input.id, mask.unmaskedValue);
                         // }}
                       />
+
                       <ErrorMessage
                         name="hourmeter"
                         component="div"
@@ -385,6 +403,7 @@ export default function CarInspection({ initialValues = null }) {
                         value={values.internal}
                         onChange={handleChange}
                         placeholder="Descreva detalhes importantes da vistoria"
+                        // readOnly={isEditMode.current}
                       />
                       <ErrorMessage
                         name="internal"
@@ -417,6 +436,7 @@ export default function CarInspection({ initialValues = null }) {
                         value={values.external}
                         onChange={handleChange}
                         placeholder="Descreva detalhes importantes da vistoria"
+                        // readOnly={isEditMode.current}
                       />
                       <ErrorMessage
                         name="external"
@@ -451,6 +471,7 @@ export default function CarInspection({ initialValues = null }) {
                         value={values.obs}
                         onChange={handleChange}
                         placeholder="Descreva detalhes importantes da vistoria"
+                        // readOnly={isEditMode.current}
                       />
                       <ErrorMessage
                         name="obs"
@@ -470,29 +491,19 @@ export default function CarInspection({ initialValues = null }) {
                     <PreviewMultipleImages files={files} setFiles={setFiles} />
                   </Row>
 
-                  {/* <Button variant="primary" type="submit">
-                    {isEditMode ? 'Save' : 'Add'}
-                  </Button>
-                  <Button variant="danger" type="reset">
-                    Reset
-                  </Button> */}
                   <Row className="justify-content-center pt-2 pb-4">
-                    <>
+                    {isEditMode.current ? null : (
                       <Col xs="auto" className="text-center">
                         <Button variant="warning" type="reset">
                           Limpar
                         </Button>
                       </Col>
-                      <Col xs="auto" className="text-center">
-                        <Button
-                          // variant="success"
-                          type="submit"
-                          // onClick={submitForm}
-                        >
-                          Cadastrar
-                        </Button>
-                      </Col>
-                    </>
+                    )}
+                    <Col xs="auto" className="text-center">
+                      <Button variant="success" type="submit">
+                        {isEditMode ? 'Editar' : 'Cadastrar'}
+                      </Button>
+                    </Col>
                   </Row>
                 </Form>
               )}

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -38,21 +38,34 @@ const emptyValues = {
   CarFueltypeId: '',
   CarAccessories: [],
   searchAccessory: '',
+  // CarAccessorytypeType: '',
 };
 
-const validationSchema = Yup.object().shape({});
+const validationSchema = Yup.object().shape({
+  CartypeId: Yup.number().required('Necessário selecionar o tipo de veículo!'),
+  CarFueltypeId: Yup.number().required('Necessário selecionar o combustível!'),
+  brand: Yup.string().required('Necessário inserir a marca!'),
+  model: Yup.string().required('Necessário inserir o modelo!'),
+  // alias: Yup.string().required('Necessário inserir o apelido!'),
+  color: Yup.string().required('Necessário inserir a cor!'),
+  plate: Yup.string().required('Necessário inserir a placa!'),
+  renavan: Yup.string().required('Necessário inserir o renavan!'),
+  chassi: Yup.string().required('Necessário inserir o chassi!'),
+  year: Yup.number().required('Necessário inserir o ano!'),
+});
 
-export default function CarOccurrence({ initialValues = null }) {
+export default function Car({ data = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [fuelOptions, setFuelOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [categoryAccessory, setCategoryAccessory] = useState([]);
   const [files, setFiles] = useState([]);
   const [openCollapse, setOpenCollapse] = useState(false);
+  const [initialValues, setInitialValues] = useState(data);
 
-  // const [workers, setWorkers] = useState([]);
-  // const [cars, setCars] = useState([]);
-  // const [occurrencestypes, setOccurrencestypes] = useState([]);
+  const isEditMode = !!initialValues;
+  // const isEditMode = useRef(!!initialValues);
+  // if (isEditMode) console.log(initialValues);
 
   useEffect(() => {
     async function getData() {
@@ -166,25 +179,79 @@ export default function CarOccurrence({ initialValues = null }) {
       }
     }
 
+    let addList;
+    let deleteList;
+    let updateList;
+
+    formattedValues.CarId = values.id;
+
+    if (isEditMode) {
+      addList = [
+        ...formattedValues.CarAccessories.filter(
+          (item) =>
+            !initialValues.CarAccessories.some(
+              (initialItem) =>
+                initialItem.CarAccessorytypeId === item.CarAccessorytypeId
+            )
+        ),
+      ];
+
+      addList.forEach((item) => (item.CarId = formattedValues.id));
+
+      deleteList = [
+        ...formattedValues.CarAccessories.filter(
+          (initialItem) =>
+            !initialValues.CarAccessories.some(
+              (item) =>
+                initialItem.CarAccessorytypeId === item.CarAccessorytypeId
+            )
+        ),
+      ];
+
+      deleteList.forEach((item) => (item.CarId = formattedValues.id));
+
+      updateList = [
+        ...formattedValues.CarAccessories.filter((initialItem) =>
+          initialValues.CarAccessories.some(
+            (item) => initialItem.CarAccessorytypeId === item.CarAccessorytypeId
+          )
+        ),
+      ];
+      updateList.forEach((item) => (item.CarId = formattedValues.id));
+    }
+
     try {
       setIsLoading(true);
       console.log(values);
+      if (isEditMode) {
+        await axios.put(`/cars/${initialValues.id}`, formattedValues);
+        if (deleteList.length > 0)
+          await axios.delete(`/cars/accessories/`, {
+            data: deleteList,
+          });
 
-      if (files.length > 0) {
+        // ADD AND UPDATE DATA
+        const AddANDUpdateList = [...addList, ...updateList];
+        console.log(AddANDUpdateList);
+        if (AddANDUpdateList.length > 0)
+          await axios.post(`/cars/accessories/`, AddANDUpdateList);
+
+        toast.success('Veículo Editado Com Sucesso!');
+      } else if (files.length > 0) {
         await axios.post(`/cars/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        // await axios.post(`/cars/accessories/`, formattedValues);
+        resetForm();
+        toast.success('Veículo Cadastrado Com Sucesso!');
       } else {
         await axios.post(`/cars/`, formattedValues);
-        // await axios.post(`/cars/accessories/`, formattedValues);
+        resetForm();
+        toast.success('Veículo Cadastrado Com Sucesso!');
       }
       setIsLoading(false);
       setOpenCollapse(false);
-      resetForm();
-      toast.success('Veículo Cadastrado Com Sucesso!');
     } catch (err) {
       setIsLoading(true);
       console.log(values);
@@ -193,6 +260,7 @@ export default function CarOccurrence({ initialValues = null }) {
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
         : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
       setIsLoading(false);
+      toast.error('Necessário preencher todos os campos obrigatórios!');
     }
   };
 
@@ -278,6 +346,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="CartypeId"
                         component="div"
@@ -310,6 +379,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           handleBlur(e);
                         }}
                       />
+
                       <ErrorMessage
                         name="alias"
                         component="div"
@@ -454,7 +524,6 @@ export default function CarOccurrence({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>PLACA</BootstrapForm.Label>
-
                       <Field
                         type="text"
                         name="plate"
@@ -486,7 +555,6 @@ export default function CarOccurrence({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>ANO</BootstrapForm.Label>
-
                       <Field
                         type="number"
                         name="year"
@@ -524,6 +592,11 @@ export default function CarOccurrence({ initialValues = null }) {
                           <Select
                             {...field}
                             inputId="CarFueltypeId"
+                            className={
+                              errors.CarFueltypeId && touched.CarFueltypeId
+                                ? 'is-invalid'
+                                : null
+                            }
                             options={fuelOptions.map((item) => ({
                               value: item.id,
                               label: item.type,
@@ -550,6 +623,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="CarFueltypeId"
                         component="div"
@@ -774,6 +848,7 @@ export default function CarOccurrence({ initialValues = null }) {
                       className="pb-3"
                     >
                       <BootstrapForm.Label>OBSERVAÇÕES</BootstrapForm.Label>
+
                       <BootstrapForm.Control
                         as="textarea"
                         rows={3}
@@ -788,6 +863,7 @@ export default function CarOccurrence({ initialValues = null }) {
                         }}
                         readOnly={!!openCollapse}
                       />
+
                       <ErrorMessage
                         name="obs"
                         component="div"
@@ -867,7 +943,8 @@ export default function CarOccurrence({ initialValues = null }) {
                                         </BootstrapForm.Label>
                                       ) : null}
                                       <div className="px-2">
-                                        {item.CarAccessorytypeType}
+                                        {item.CarAccessorytypeType ||
+                                          item.CarAccessorytype.type}
                                       </div>
                                     </BootstrapForm.Group>
                                     {/* ////////////////////////////////////////////////////////////////////////////////////// */}
@@ -1024,22 +1101,18 @@ export default function CarOccurrence({ initialValues = null }) {
                   </Row>
 
                   <Row className="justify-content-center pt-2 pb-4">
-                    <>
+                    {isEditMode.current ? null : (
                       <Col xs="auto" className="text-center">
                         <Button variant="warning" type="reset">
                           Limpar
                         </Button>
                       </Col>
-                      <Col xs="auto" className="text-center">
-                        <Button
-                          // variant="success"
-                          type="submit"
-                          // onClick={submitForm}
-                        >
-                          Cadastrar
-                        </Button>
-                      </Col>
-                    </>
+                    )}
+                    <Col xs="auto" className="text-center">
+                      <Button variant="success" type="submit">
+                        {isEditMode ? 'Editar' : 'Cadastrar'}
+                      </Button>
+                    </Col>
                   </Row>
                 </Form>
               )}

@@ -24,7 +24,7 @@ import Loading from '../../../../components/Loading';
 import TableGfilterNestedrowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
-import EditModal from '../../components/EditModalInspection';
+import EditModal from './components/EditModalInspection';
 
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>
@@ -230,7 +230,7 @@ export default function Index() {
               <OverlayTrigger
                 placement="top"
                 delay={{ show: 250, hide: 400 }}
-                overlay={(props) => renderTooltip(props, 'Editar veículo')}
+                overlay={(props) => renderTooltip(props, 'Editar vistoria')}
               >
                 <Button
                   size="sm"

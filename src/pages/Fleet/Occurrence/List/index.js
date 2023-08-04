@@ -23,7 +23,7 @@ import Loading from '../../../../components/Loading';
 import TableGfilterNestedrowHiddenRows from '../../components/TableGfilterNestedRowHiddenRows';
 import TableNestedrow from '../../components/TableNestedRow';
 import GalleryComponent from '../../../../components/GalleryComponent';
-import EditModal from '../../components/EditModalOccurrence';
+import EditModal from './components/EditModalOccurrence';
 
 const renderTooltip = (props, message) => (
   <Tooltip id="button-tooltip" {...props}>

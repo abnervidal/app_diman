@@ -36,13 +36,14 @@ const validationSchema = Yup.object().shape({
   data: Yup.date().required('Necessário selecionar a data da ocorrência!'),
 });
 
-export default function CarOccurrence({ initialValues = null }) {
+export default function CarOccurrence({ data = null }) {
   const userId = useSelector((state) => state.auth.user.id);
   const [isLoading, setIsLoading] = useState(false);
   const [workers, setWorkers] = useState([]);
   const [cars, setCars] = useState([]);
   const [occurrencestypes, setOccurrencestypes] = useState([]);
   const [files, setFiles] = useState([]);
+  const [initialValues, setInitialValues] = useState(data);
 
   const isEditMode = !!initialValues;
 
@@ -117,25 +118,28 @@ export default function CarOccurrence({ initialValues = null }) {
 
     try {
       setIsLoading(true);
-      if (files.length > 0) {
+      if (isEditMode) {
+        await axios.put(`/cars/occurrences/${formattedValues.id}`, values);
+        setIsLoading(false);
+        toast.success(`Edição realizada com sucesso`);
+      } else if (files.length > 0) {
         await axios.post(`/cars/occurrences/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        // for (const pair of formData.entries()) {
-        //   console.log(`${pair[0]} - ${pair[1]}`);
-        // }
+        setFiles([]);
+        resetForm();
+        toast.success('Ocorrência Cadastrada Com Sucesso!');
       } else {
         await axios.post(`/cars/occurrences/`, formattedValues);
+        resetForm();
+        toast.success('Ocorrência Cadastrada Com Sucesso!');
       }
       setIsLoading(false);
-      setFiles([]);
-      resetForm();
-      toast.success('Ocorrência Cadastrada Com Sucesso!');
     } catch (err) {
       setIsLoading(true);
-      console.log(values);
+      // console.log(values);
       // eslint-disable-next-line no-unused-expressions
       err.response?.data?.errors
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
@@ -160,7 +164,9 @@ export default function CarOccurrence({ initialValues = null }) {
               className=" text-center"
               style={{ background: primaryDarkColor, color: 'white' }}
             >
-              <span className="fs-5">ADICIONAR OCORRÊNCIA</span>
+              <span className="fs-5">
+                {isEditMode ? 'EDITAR' : 'CADASTRAR'} OCORRÊNCIA
+              </span>
             </Col>
           </Row>
           <Row className="pt-2">
@@ -168,7 +174,11 @@ export default function CarOccurrence({ initialValues = null }) {
               initialValues={initialValues || emptyValues}
               validationSchema={validationSchema}
               onSubmit={(values, { resetForm }) => {
-                handleSubmit(values, resetForm);
+                if (isEditMode) {
+                  handleSubmit(values);
+                } else {
+                  handleSubmit(values, resetForm);
+                }
               }}
               onReset={handleResetAll}
               enableReinitialize
@@ -221,6 +231,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="CarId"
                         component="div"
@@ -272,6 +283,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="WorkerId"
                         component="div"
@@ -325,6 +337,7 @@ export default function CarOccurrence({ initialValues = null }) {
                           />
                         )}
                       </Field>
+
                       <ErrorMessage
                         name="CarOccurrencetypeId"
                         component="div"
@@ -342,6 +355,7 @@ export default function CarOccurrence({ initialValues = null }) {
                       <BootstrapForm.Label>
                         DATA DA OCORRÊNCIA
                       </BootstrapForm.Label>
+
                       <Field
                         xs={6}
                         className={
@@ -351,7 +365,9 @@ export default function CarOccurrence({ initialValues = null }) {
                         name="data"
                         as={BootstrapForm.Control}
                         placeholder="Código"
+                        // disabled={isEditMode.current}
                       />
+
                       <ErrorMessage
                         name="data"
                         component="div"
@@ -376,6 +392,7 @@ export default function CarOccurrence({ initialValues = null }) {
                         value={values.obs}
                         onChange={handleChange}
                         placeholder="Descreva mais detalhes da ocorrência"
+                        // readOnly={isEditMode.current}
                       />
                       <ErrorMessage
                         name="obs"
@@ -396,22 +413,18 @@ export default function CarOccurrence({ initialValues = null }) {
                   </Row>
 
                   <Row className="justify-content-center pt-2 pb-4">
-                    <>
+                    {isEditMode.current ? null : (
                       <Col xs="auto" className="text-center">
                         <Button variant="warning" type="reset">
                           Limpar
                         </Button>
                       </Col>
-                      <Col xs="auto" className="text-center">
-                        <Button
-                          // variant="success"
-                          type="submit"
-                          // onClick={submitForm}
-                        >
-                          Cadastrar
-                        </Button>
-                      </Col>
-                    </>
+                    )}
+                    <Col xs="auto" className="text-center">
+                      <Button variant="success" type="submit">
+                        {isEditMode ? 'Editar' : 'Cadastrar'}
+                      </Button>
+                    </Col>
                   </Row>
                 </Form>
               )}
