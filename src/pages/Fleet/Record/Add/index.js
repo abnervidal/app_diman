@@ -170,6 +170,12 @@ export default function Car({ data = null }) {
       }
     }); // LIMPANDO CHAVES `EMPTY STRINGS`
 
+    let addList;
+    let deleteList;
+    let updateList;
+
+    formattedValues.CarId = values.id;
+
     let formData;
     if (files.length > 0) {
       formData = toFormData(formattedValues);
@@ -178,12 +184,6 @@ export default function Car({ data = null }) {
         formData.append('photos', file.file);
       }
     }
-
-    let addList;
-    let deleteList;
-    let updateList;
-
-    formattedValues.CarId = values.id;
 
     if (isEditMode) {
       addList = [
@@ -222,14 +222,20 @@ export default function Car({ data = null }) {
 
     try {
       setIsLoading(true);
-      console.log('add:', addList);
-      console.log('update:', updateList);
-      console.log('delete:', deleteList);
-      if (isEditMode) {
+      if (files.length > 0) {
+        await axios.post(`/cars/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        resetForm();
+        toast.success('Veículo Cadastrado Com Sucesso!');
+      } else if (isEditMode) {
         console.log(initialValues);
         await axios.put(`/cars/${initialValues.id}`, formattedValues);
         if (deleteList.length > 0)
-          await axios.delete(`/cars/accessories/${deleteList.id}`, {
+          await axios.delete(`/cars/accessories/`, {
             data: deleteList,
           });
 
@@ -240,19 +246,12 @@ export default function Car({ data = null }) {
           await axios.post(`/cars/accessories/`, AddANDUpdateList);
 
         toast.success('Veículo Editado Com Sucesso!');
-      } else if (files.length > 0) {
-        await axios.post(`/cars/`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        resetForm();
-        toast.success('Veículo Cadastrado Com Sucesso!');
       } else {
         await axios.post(`/cars/`, formattedValues);
         resetForm();
         toast.success('Veículo Cadastrado Com Sucesso!');
       }
+      setFiles([]);
       setIsLoading(false);
       setOpenCollapse(false);
     } catch (err) {
@@ -263,7 +262,7 @@ export default function Car({ data = null }) {
         ? err.response.data.errors.map((error) => toast.error(error)) // errors -> resposta de erro enviada do backend (precisa se conectar com o back)
         : toast.error(err.message); // e.message -> erro formulado no front (é criado pelo front, não precisa de conexão)
       setIsLoading(false);
-      toast.error('Necessário preencher todos os campos obrigatórios!');
+      toast.error('ERRO, entre em contato com os devenvolvedores!');
     }
   };
 
