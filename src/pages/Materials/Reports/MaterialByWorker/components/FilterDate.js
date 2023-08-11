@@ -28,10 +28,10 @@ const currentDate = new Date();
 currentDate.setHours(23, 59, 59, 999);
 
 // Get the first day of the current month
-// const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
 // Get the first day of the current year
-const firstDay = new Date(new Date().getFullYear(), 0, 1);
+// const firstDay = new Date(new Date().getFullYear(), 0, 1);
 
 // Get ten days before of the current day in the first instant of day
 // const firstDay = new Date(currentDate.getTime() - 10 * 24 * 60 * 60 * 1000);
